@@ -1348,7 +1348,6 @@ var Game = /*#__PURE__*/ function() {
             }
         },
         {
-<<<<<<< HEAD
             key: "checkLavaCollision",
             value: function checkLavaCollision() {
                 // Lava rivers data - each entry defines a river's position and size
@@ -1428,10 +1427,12 @@ var Game = /*#__PURE__*/ function() {
                 setTimeout(function() {
                     _this.player.isHit = false;
                 }, 500);
-=======
+            },
+        },
+        {
             key: "checkPortalState",
             value: function checkPortalState() {
-                console.log('Portal State:', {
+                    console.log('Portal State:', {
                     portalExists: !!this.portal,
                     portalActive: this.portal?.active,
                     portalPosition: this.portal ? { x: this.portal.x, y: this.portal.y } : null,
@@ -1439,7 +1440,6 @@ var Game = /*#__PURE__*/ function() {
                     hasGoldenBoots: this.player?.hasGoldenBoots,
                     gameState: this.gameState
                 });
->>>>>>> 9a63c0e (Gameplay)
             }
         }
     ]);
