@@ -14,6 +14,15 @@ export class CraftingPanel {
         this.game.canvas.addEventListener('click', this.handleClick);
     }
 
+    updateResources(resources) {
+        this.resources = resources;
+    }
+
+    highlightResource(resourceType) {
+        // This method would typically highlight a resource
+        // It's referenced in the codebase but not implemented
+    }
+
     handleClick(e) {
         const rect = this.game.canvas.getBoundingClientRect();
         

@@ -902,6 +902,30 @@ var World = /*#__PURE__*/ function() {
                 }
                 ctx.restore();
             }
+        },
+        {
+            key: "checkLavaPitCollision",
+            value: function checkLavaPitCollision(player) {
+                // Player's feet position
+                const playerX = player.x;
+                const playerY = player.y + player.height;
+                const playerWidth = player.width;
+                
+                // Check collision with any lava pit
+                for (const pit of this.lavaPits) {
+                    // Check if player's feet overlap with the lava pit
+                    if (
+                        playerX + playerWidth * 0.1 < pit.x + pit.width &&
+                        playerX + playerWidth * 0.9 > pit.x &&
+                        playerY >= pit.y &&
+                        playerY <= pit.y + 15 // Only check the top portion of the lava
+                    ) {
+                        return true;
+                    }
+                }
+                
+                return false;
+            }
         }
     ]);
     return World;

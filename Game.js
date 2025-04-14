@@ -614,6 +614,11 @@ var Game = /*#__PURE__*/ function() {
                     if (!this.player.isImmune) {
                         var collidedZombie = this.world.checkZombieCollisions(this.player);
                         if (collidedZombie) this.handleZombieCollision();
+                        
+                        // Check for lava collision
+                        if (this.checkLavaCollision()) {
+                            this.handleLavaCollision();
+                        }
                     }
                     // Update piglins
                     this.updatePiglins(deltaTime);
@@ -780,6 +785,8 @@ var Game = /*#__PURE__*/ function() {
                     if (this.gameState === GAME_STATE.QUIZ) {
                         this.quizPanel.render(this.ctx);
                     }
+                    // Render zombie speed info in the top left corner
+                    this.renderZombieSpeed();
                 }
                 // Game state specific rendering
                 switch(this.gameState){
@@ -883,6 +890,35 @@ var Game = /*#__PURE__*/ function() {
             }
         },
         {
+            key: "renderZombieSpeed",
+            value: function renderZombieSpeed() {
+                // Display zombie speed in top left corner
+                const baseSpeed = 0.5;
+                let currentSpeed = baseSpeed;
+                
+                // Calculate current speed based on gold collected (same formula as in Zombie.js)
+                if (this.resources && this.resources.goldNuggets !== undefined) {
+                    const goldNuggets = this.resources.goldNuggets;
+                    const speedIncreases = Math.floor(goldNuggets / 6);
+                    currentSpeed = Math.min(baseSpeed + speedIncreases * 0.1, 1.2);
+                }
+                
+                // Draw background box
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                this.ctx.fillRect(10, 10, 170, 30);
+                this.ctx.strokeStyle = '#FF5555';
+                this.ctx.lineWidth = 2;
+                this.ctx.strokeRect(10, 10, 170, 30);
+                
+                // Draw text
+                this.ctx.fillStyle = '#FFFFFF';
+                this.ctx.font = '16px Arial';
+                this.ctx.textAlign = 'left';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText(`Zombie Speed: ${currentSpeed.toFixed(1)}`, 20, 25);
+            }
+        },
+        {
             key: "renderControlInstructions",
             value: function renderControlInstructions() {
                 // Don't show on mobile as they already have touch controls
@@ -970,11 +1006,19 @@ var Game = /*#__PURE__*/ function() {
             key: "_drawLavaRivers",
             value: function _drawLavaRivers() {
                 // Draw animated lava rivers (fixed in world space)
+                // There are three lava rivers in the game:
+                // 1. From x=0 to x=200
+                // 2. From x=300 to x=450
+                // 3. From x=500 to x=680
+                // All rivers are at GROUND_LEVEL + 20 with height 10
+                
                 var time = Date.now() * 0.001; // Get time in seconds
                 // River 1 (from x=0 to x=200)
                 this._drawAnimatedLavaSection(0, GROUND_LEVEL + 20, 200, 10, time);
                 // River 2 (from x=300 to x=450)
                 this._drawAnimatedLavaSection(300, GROUND_LEVEL + 20, 150, 10, time);
+                // River 3 (from x=500 to x=680)
+                this._drawAnimatedLavaSection(500, GROUND_LEVEL + 20, 180, 10, time);
                 // Add glow effect (fixed in world space)
                 var gradient = this.ctx.createLinearGradient(0, 0, 0, GROUND_LEVEL + 30);
                 // Enhanced glow gradient with smoother transition
@@ -1266,6 +1310,92 @@ var Game = /*#__PURE__*/ function() {
                         }
                     }
                 });
+            }
+        },
+        {
+            key: "checkLavaCollision",
+            value: function checkLavaCollision() {
+                // Lava rivers data - each entry defines a river's position and size
+                const lavaRivers = [
+                    { start: 0, end: 200 },    // River 1: from x=0 to x=200
+                    { start: 300, end: 450 },  // River 2: from x=300 to x=450
+                    { start: 500, end: 680 }   // River 3: from x=500 to x=680
+                ];
+                
+                // All rivers are at GROUND_LEVEL + 20 with height 10
+                const lavaY = GROUND_LEVEL + 20;
+                const lavaHeight = 10;
+                
+                // Get player position relative to world
+                const playerX = this.player.x;
+                const playerY = this.player.y + this.player.height;
+                const playerFeetWidth = this.player.width * 0.8; // Narrow collision for feet
+                const playerLeftFoot = playerX + this.player.width * 0.1;
+                const playerRightFoot = playerLeftFoot + playerFeetWidth;
+                
+                // Check if player's feet are at lava height
+                if (playerY >= lavaY && playerY <= lavaY + lavaHeight) {
+                    // Check collision with any river
+                    for (const river of lavaRivers) {
+                        // Check if any part of player's feet overlaps with river
+                        if ((playerLeftFoot >= river.start && playerLeftFoot <= river.end) || 
+                            (playerRightFoot >= river.start && playerRightFoot <= river.end) ||
+                            (playerLeftFoot <= river.start && playerRightFoot >= river.end)) {
+                            return true;
+                        }
+                    }
+                }
+                
+                // Check for lava pit collisions as well
+                if (this.world.checkLavaPitCollision(this.player)) {
+                    return true;
+                }
+                
+                return false;
+            }
+        },
+        {
+            key: "handleLavaCollision",
+            value: function handleLavaCollision() {
+                // Similar to zombie collision but with lava-specific effects
+                var _this = this;
+                
+                // Jump up slightly to get out of the lava
+                this.player.vy = -5;
+                
+                // Check if player has any resources to lose
+                var availableResources = [];
+                for(var type in this.resources){
+                    if (this.resources[type] >= 5) {
+                        availableResources.push(type);
+                    }
+                }
+                if (availableResources.length > 0) {
+                    // Choose a random resource to reduce
+                    var resourceType = availableResources[Math.floor(Math.random() * availableResources.length)];
+                    this.resources[resourceType] -= 5;
+                    // Update crafting panel
+                    this.craftingPanel.updateResources(this.resources);
+                    // Add visual feedback about resource loss
+                    this.floatingTexts.push(new FloatingText("-5 ".concat(resourceType, "!"), this.player.x, this.player.y - 40));
+                }
+                
+                // Add some visual feedback (lava specific)
+                this.floatingTexts.push(new FloatingText("Hot! Hot! Hot!", this.player.x, this.player.y - 20));
+                
+                // Play hurt sound effect
+                this.audioManager.play('hurt', 0.7);
+                
+                // Apply screen shake effect
+                this.applyScreenShake(5);
+                
+                // Visual indication of being hit
+                this.player.isHit = true;
+                this.player.isImmune = true;
+                this.player.immunityTimer = 0;
+                setTimeout(function() {
+                    _this.player.isHit = false;
+                }, 500);
             }
         }
     ]);

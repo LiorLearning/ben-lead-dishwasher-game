@@ -360,61 +360,200 @@ var QuizPanel = /*#__PURE__*/ function() {
             key: "render",
             value: function render(ctx) {
                 if (!this.visible) return;
-                // Semi-transparent overlay
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                
+                // Semi-transparent overlay with more opacity for better focus
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
                 ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-                // Quiz panel background
-                ctx.fillStyle = '#34495e'; // Dark blue
+                
+                // Quiz panel background with gradient for depth
+                const gradient = ctx.createLinearGradient(this.x, this.y, this.x, this.y + this.height);
+                gradient.addColorStop(0, '#2c3e50');  // Darker top
+                gradient.addColorStop(1, '#34495e');  // Lighter bottom
+                ctx.fillStyle = gradient;
                 ctx.fillRect(this.x, this.y, this.width, this.height);
-                // Panel border (Minecraft style)
-                var borderWidth = 4;
+                
+                // Panel border with better texture appearance
+                const borderWidth = 6;  // Slightly thicker border
                 ctx.fillStyle = '#8B4513'; // Wood color
-                ctx.fillRect(this.x - borderWidth, this.y - borderWidth, this.width + borderWidth * 2, borderWidth); // Top
-                ctx.fillRect(this.x - borderWidth, this.y + this.height, this.width + borderWidth * 2, borderWidth); // Bottom
-                ctx.fillRect(this.x - borderWidth, this.y, borderWidth, this.height); // Left
-                ctx.fillRect(this.x + this.width, this.y, borderWidth, this.height); // Right
-                // Pixelated corners (Minecraft style)
+                
+                // Draw border with slight texture variation
+                // Top border
+                for (let x = this.x - borderWidth; x < this.x + this.width + borderWidth; x += 8) {
+                    const variation = Math.random() * 3 - 1;
+                    ctx.fillRect(x, this.y - borderWidth, 8, borderWidth + variation);
+                }
+                
+                // Bottom border
+                for (let x = this.x - borderWidth; x < this.x + this.width + borderWidth; x += 8) {
+                    const variation = Math.random() * 3 - 1;
+                    ctx.fillRect(x, this.y + this.height, 8, borderWidth + variation);
+                }
+                
+                // Left border
+                for (let y = this.y; y < this.y + this.height; y += 8) {
+                    const variation = Math.random() * 3 - 1;
+                    ctx.fillRect(this.x - borderWidth, y, borderWidth + variation, 8);
+                }
+                
+                // Right border
+                for (let y = this.y; y < this.y + this.height; y += 8) {
+                    const variation = Math.random() * 3 - 1;
+                    ctx.fillRect(this.x + this.width, y, borderWidth + variation, 8);
+                }
+                
+                // Enhanced pixelated corners (Minecraft style)
                 ctx.fillRect(this.x - borderWidth * 2, this.y - borderWidth * 2, borderWidth, borderWidth); // Top-left
                 ctx.fillRect(this.x + this.width + borderWidth, this.y - borderWidth * 2, borderWidth, borderWidth); // Top-right
                 ctx.fillRect(this.x - borderWidth * 2, this.y + this.height + borderWidth, borderWidth, borderWidth); // Bottom-left
                 ctx.fillRect(this.x + this.width + borderWidth, this.y + this.height + borderWidth, borderWidth, borderWidth); // Bottom-right
+                
                 if (this.currentQuiz) {
-                    // Quiz title
-                    ctx.fillStyle = 'white';
-                    ctx.font = '24px Arial';
+                    // Quiz title with text shadow for better visibility
+                    ctx.fillStyle = '#F8F8F8';
+                    ctx.font = 'bold 28px Arial';
                     ctx.textAlign = 'center';
-                    ctx.fillText('Question', this.x + this.width / 2, this.y + 30);
+                    
+                    // Add text shadow
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+                    ctx.shadowBlur = 5;
+                    ctx.shadowOffsetX = 2;
+                    ctx.shadowOffsetY = 2;
+                    ctx.fillText('Question', this.x + this.width / 2, this.y + 35);
+                    
+                    // Reset shadow
+                    ctx.shadowColor = 'transparent';
+                    ctx.shadowBlur = 0;
+                    ctx.shadowOffsetX = 0;
+                    ctx.shadowOffsetY = 0;
+                    
+                    // Question text with better contrast
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.font = 'bold 20px Arial';
+                    
+                    // Add subtle highlight to question area
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+                    const questionAreaHeight = 60;
+                    ctx.fillRect(this.x + 20, this.y + 45, this.width - 40, questionAreaHeight);
+                    
                     // Question text
-                    ctx.fillStyle = 'white';
-                    ctx.font = '18px Arial';
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.font = 'bold 20px Arial';
                     // Handle long questions with wrapping
                     this.wrapText(ctx, this.currentQuiz.question, this.x + this.width / 2, this.y + 70, this.width - 40, 25);
-                    // Answer options
-                    var answers = this.currentQuiz.answers;
-                    var buttonHeight = 40;
-                    var buttonSpacing = 15;
-                    var startY = this.y + 120;
-                    for(var i = 0; i < answers.length; i++){
-                        var buttonY = startY + i * (buttonHeight + buttonSpacing);
-                        // Button background
-                        ctx.fillStyle = this.selectedAnswer === i ? '#3498db' : '#2980b9';
-                        ctx.fillRect(this.x + 50, buttonY, this.width - 100, buttonHeight);
-                        // Button border
-                        ctx.strokeStyle = '#1f618d';
-                        ctx.lineWidth = 2;
-                        ctx.strokeRect(this.x + 50, buttonY, this.width - 100, buttonHeight);
+                    
+                    // Answer options with improved buttons and hover effect
+                    const answers = this.currentQuiz.answers;
+                    const buttonHeight = 45; // Taller buttons
+                    const buttonSpacing = 12;
+                    const startY = this.y + 120;
+                    
+                    for (let i = 0; i < answers.length; i++) {
+                        const buttonY = startY + i * (buttonHeight + buttonSpacing);
+                        
+                        // Button background with gradient
+                        const buttonGradient = ctx.createLinearGradient(
+                            this.x + 50, buttonY, 
+                            this.x + 50, buttonY + buttonHeight
+                        );
+                        
+                        if (this.selectedAnswer === i) {
+                            // Selected button
+                            buttonGradient.addColorStop(0, '#3498db');
+                            buttonGradient.addColorStop(1, '#2980b9');
+                        } else {
+                            // Normal button
+                            buttonGradient.addColorStop(0, '#2980b9');
+                            buttonGradient.addColorStop(1, '#1f618d');
+                        }
+                        
+                        ctx.fillStyle = buttonGradient;
+                        
+                        // Button with rounded corners
+                        const cornerRadius = 5;
+                        ctx.beginPath();
+                        ctx.moveTo(this.x + 50 + cornerRadius, buttonY);
+                        ctx.lineTo(this.x + this.width - 50 - cornerRadius, buttonY);
+                        ctx.quadraticCurveTo(this.x + this.width - 50, buttonY, this.x + this.width - 50, buttonY + cornerRadius);
+                        ctx.lineTo(this.x + this.width - 50, buttonY + buttonHeight - cornerRadius);
+                        ctx.quadraticCurveTo(this.x + this.width - 50, buttonY + buttonHeight, this.x + this.width - 50 - cornerRadius, buttonY + buttonHeight);
+                        ctx.lineTo(this.x + 50 + cornerRadius, buttonY + buttonHeight);
+                        ctx.quadraticCurveTo(this.x + 50, buttonY + buttonHeight, this.x + 50, buttonY + buttonHeight - cornerRadius);
+                        ctx.lineTo(this.x + 50, buttonY + cornerRadius);
+                        ctx.quadraticCurveTo(this.x + 50, buttonY, this.x + 50 + cornerRadius, buttonY);
+                        ctx.closePath();
+                        ctx.fill();
+                        
+                        // Button glow effect when selected
+                        if (this.selectedAnswer === i) {
+                            ctx.shadowColor = 'rgba(52, 152, 219, 0.7)';
+                            ctx.shadowBlur = 10;
+                            ctx.strokeStyle = '#5DADE2';
+                            ctx.lineWidth = 2;
+                            ctx.stroke();
+                            ctx.shadowColor = 'transparent';
+                            ctx.shadowBlur = 0;
+                        } else {
+                            // Button border
+                            ctx.strokeStyle = '#1f618d';
+                            ctx.lineWidth = 2;
+                            ctx.stroke();
+                        }
+                        
                         // Answer text
-                        ctx.fillStyle = 'white';
-                        ctx.font = '16px Arial';
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.font = '18px Arial';
                         ctx.textAlign = 'left';
-                        ctx.fillText("".concat(i + 1, ". ").concat(answers[i]), this.x + 70, buttonY + buttonHeight / 2 + 5);
+                        ctx.fillText(`${i + 1}. ${answers[i]}`, this.x + 70, buttonY + buttonHeight / 2 + 6);
                     }
-                    // Feedback message
+                    
+                    // Feedback message with animation
                     if (this.showingFeedback) {
+                        // Calculate animation progress (0 to 1)
+                        const maxFeedbackTime = 2000;
+                        const animationProgress = 1 - (this.feedbackTimer / maxFeedbackTime);
+                        
+                        // Apply scale and opacity based on animation
+                        const scale = 0.8 + (0.2 * animationProgress);
+                        const opacity = Math.min(1, animationProgress * 3);
+                        
+                        ctx.save();
+                        ctx.globalAlpha = opacity;
+                        
+                        // Center position
+                        const centerX = this.x + this.width / 2;
+                        const centerY = startY + answers.length * (buttonHeight + buttonSpacing) + 25;
+                        
+                        // Create feedback message background
+                        ctx.fillStyle = this.feedbackColor === '#4CAF50' ? 'rgba(76, 175, 80, 0.2)' : 'rgba(244, 67, 54, 0.2)';
+                        const msgWidth = 300;
+                        const msgHeight = 40;
+                        
+                        // Draw rounded rectangle for feedback message
+                        ctx.beginPath();
+                        ctx.moveTo(centerX - msgWidth/2 + 10, centerY - msgHeight/2);
+                        ctx.lineTo(centerX + msgWidth/2 - 10, centerY - msgHeight/2);
+                        ctx.quadraticCurveTo(centerX + msgWidth/2, centerY - msgHeight/2, centerX + msgWidth/2, centerY - msgHeight/2 + 10);
+                        ctx.lineTo(centerX + msgWidth/2, centerY + msgHeight/2 - 10);
+                        ctx.quadraticCurveTo(centerX + msgWidth/2, centerY + msgHeight/2, centerX + msgWidth/2 - 10, centerY + msgHeight/2);
+                        ctx.lineTo(centerX - msgWidth/2 + 10, centerY + msgHeight/2);
+                        ctx.quadraticCurveTo(centerX - msgWidth/2, centerY + msgHeight/2, centerX - msgWidth/2, centerY + msgHeight/2 - 10);
+                        ctx.lineTo(centerX - msgWidth/2, centerY - msgHeight/2 + 10);
+                        ctx.quadraticCurveTo(centerX - msgWidth/2, centerY - msgHeight/2, centerX - msgWidth/2 + 10, centerY - msgHeight/2);
+                        ctx.closePath();
+                        ctx.fill();
+                        
+                        // Feedback message text with scaling
+                        ctx.translate(centerX, centerY);
+                        ctx.scale(scale, scale);
+                        
+                        // Draw the message text
                         ctx.fillStyle = this.feedbackColor;
-                        ctx.font = '20px Arial';
+                        ctx.font = 'bold 22px Arial';
                         ctx.textAlign = 'center';
-                        ctx.fillText(this.feedbackMessage, this.x + this.width / 2, startY + answers.length * (buttonHeight + buttonSpacing) + 20);
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(this.feedbackMessage, 0, 0);
+                        
+                        ctx.restore();
                     }
                 }
             }

@@ -115,67 +115,118 @@ var WelcomeScreen = /*#__PURE__*/ function() {
             key: "render",
             value: function render(ctx) {
                 if (this.game.isGameActive) return;
+                
                 // Background overlay with minecraft texture
-                var minecraftTexture = this.assetLoader.getAsset('minecraft');
+                const minecraftTexture = this.assetLoader.getAsset('minecraft');
                 if (minecraftTexture) {
-                    // Create a darker pattern for the welcome screen
-                    ctx.globalAlpha = 0.3;
-                    var pattern = ctx.createPattern(minecraftTexture, 'repeat');
+                    // Create a parallax effect by using two layers of the texture
+                    ctx.globalAlpha = 0.2;
+                    const pattern = ctx.createPattern(minecraftTexture, 'repeat');
                     ctx.fillStyle = pattern;
-                    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+                    
+                    // Slightly offset second layer for parallax effect
+                    const time = Date.now() / 10000; // Very slow movement
+                    const offsetX = Math.sin(time) * 5;
+                    const offsetY = Math.cos(time) * 5;
+                    
+                    ctx.save();
+                    ctx.translate(offsetX, offsetY);
+                    ctx.fillRect(-offsetX, -offsetY, CANVAS_WIDTH + offsetX*2, CANVAS_HEIGHT + offsetY*2);
+                    ctx.restore();
+                    
+                    // Reset alpha
                     ctx.globalAlpha = 1.0;
-                    // Additional overlay for readability
-                    ctx.fillStyle = 'rgba(25, 25, 50, 0.7)';
+                    
+                    // Gradient overlay for depth
+                    const gradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
+                    gradient.addColorStop(0, 'rgba(15, 15, 50, 0.85)');
+                    gradient.addColorStop(0.5, 'rgba(25, 25, 70, 0.8)');
+                    gradient.addColorStop(1, 'rgba(15, 15, 40, 0.9)');
+                    ctx.fillStyle = gradient;
                     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
                 } else {
                     // Fallback if texture isn't loaded
-                    ctx.fillStyle = 'rgba(25, 25, 50, 0.9)';
+                    const gradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
+                    gradient.addColorStop(0, 'rgba(25, 25, 60, 0.9)');
+                    gradient.addColorStop(1, 'rgba(20, 20, 40, 0.95)');
+                    ctx.fillStyle = gradient;
                     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
                 }
-                // Draw pixelated border (Minecraft-style)
-                var borderWidth = 20;
-                ctx.fillStyle = '#8B4513'; // Wood-like color
-                // Top border with pixel effect
-                for(var x = 0; x < CANVAS_WIDTH; x += borderWidth){
-                    var height = borderWidth + Math.floor(Math.random() * 10) - 5;
-                    ctx.fillRect(x, 0, borderWidth, height);
+                
+                // Draw enhanced pixelated border (Minecraft-style)
+                const borderWidth = 20;
+                
+                // Create a wood-like color gradient
+                const woodGradient = ctx.createLinearGradient(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+                woodGradient.addColorStop(0, '#8B4513'); // Standard wood
+                woodGradient.addColorStop(0.3, '#A0522D'); // Lighter wood
+                woodGradient.addColorStop(0.6, '#8B4513'); // Back to standard
+                woodGradient.addColorStop(1, '#6B3E26'); // Darker wood
+                ctx.fillStyle = woodGradient;
+                
+                // Top border with enhanced pixel effect
+                for (let x = 0; x < CANVAS_WIDTH; x += borderWidth) {
+                    const height = borderWidth + Math.floor(Math.random() * 15) - 7;
+                    const width = borderWidth + Math.floor(Math.random() * 10) - 5;
+                    // Add some randomness to color
+                    const colorVariation = Math.random() * 20 - 10;
+                    ctx.fillStyle = `rgb(${139 + colorVariation}, ${69 + colorVariation}, ${19 + colorVariation})`;
+                    ctx.fillRect(x, 0, width, height);
                 }
-                // Bottom border with pixel effect
-                for(var x1 = 0; x1 < CANVAS_WIDTH; x1 += borderWidth){
-                    var height1 = borderWidth + Math.floor(Math.random() * 10) - 5;
-                    ctx.fillRect(x1, CANVAS_HEIGHT - height1, borderWidth, height1);
+                
+                // Bottom border with enhanced pixel effect
+                for (let x = 0; x < CANVAS_WIDTH; x += borderWidth) {
+                    const height = borderWidth + Math.floor(Math.random() * 15) - 7;
+                    const width = borderWidth + Math.floor(Math.random() * 10) - 5;
+                    const colorVariation = Math.random() * 20 - 10;
+                    ctx.fillStyle = `rgb(${139 + colorVariation}, ${69 + colorVariation}, ${19 + colorVariation})`;
+                    ctx.fillRect(x, CANVAS_HEIGHT - height, width, height);
                 }
-                // Left border with pixel effect
-                for(var y = 0; y < CANVAS_HEIGHT; y += borderWidth){
-                    var width = borderWidth + Math.floor(Math.random() * 10) - 5;
-                    ctx.fillRect(0, y, width, borderWidth);
+                
+                // Left border with enhanced pixel effect
+                for (let y = 0; y < CANVAS_HEIGHT; y += borderWidth) {
+                    const width = borderWidth + Math.floor(Math.random() * 15) - 7;
+                    const height = borderWidth + Math.floor(Math.random() * 10) - 5;
+                    const colorVariation = Math.random() * 20 - 10;
+                    ctx.fillStyle = `rgb(${139 + colorVariation}, ${69 + colorVariation}, ${19 + colorVariation})`;
+                    ctx.fillRect(0, y, width, height);
                 }
-                // Right border with pixel effect
-                for(var y1 = 0; y1 < CANVAS_HEIGHT; y1 += borderWidth){
-                    var width1 = borderWidth + Math.floor(Math.random() * 10) - 5;
-                    ctx.fillRect(CANVAS_WIDTH - width1, y1, width1, borderWidth);
+                
+                // Right border with enhanced pixel effect
+                for (let y = 0; y < CANVAS_HEIGHT; y += borderWidth) {
+                    const width = borderWidth + Math.floor(Math.random() * 15) - 7;
+                    const height = borderWidth + Math.floor(Math.random() * 10) - 5;
+                    const colorVariation = Math.random() * 20 - 10;
+                    ctx.fillStyle = `rgb(${139 + colorVariation}, ${69 + colorVariation}, ${19 + colorVariation})`;
+                    ctx.fillRect(CANVAS_WIDTH - width, y, width, height);
                 }
+                
                 // Title
                 ctx.fillStyle = '#FFFFFF';
                 ctx.font = '48px Arial';
                 ctx.textAlign = 'center';
                 ctx.fillText(this.title, CANVAS_WIDTH / 2, 100);
+                
                 // Subtitle
                 ctx.fillStyle = '#EEEEEE';
                 ctx.font = '24px Arial';
                 ctx.fillText(this.subtitle, CANVAS_WIDTH / 2, 140);
+                
                 // Instructions box
                 var boxWidth = 500;
                 var boxHeight = 220;
                 var boxX = CANVAS_WIDTH / 2 - boxWidth / 2;
                 var boxY = 170;
+                
                 // Box background
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
                 ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+                
                 // Box border
                 ctx.strokeStyle = '#8B4513';
                 ctx.lineWidth = 4;
                 ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+                
                 // Instructions text
                 ctx.fillStyle = '#FFFFFF';
                 ctx.font = '20px Arial';
@@ -194,13 +245,16 @@ var WelcomeScreen = /*#__PURE__*/ function() {
                 instructions.forEach(function(line, index) {
                     ctx.fillText(line, CANVAS_WIDTH / 2, boxY + 80 + index * 25);
                 });
+                
                 // Start button
                 ctx.fillStyle = this.startButton.hovered ? '#5D9CEC' : '#4A89DC';
                 ctx.fillRect(this.startButton.x, this.startButton.y, this.startButton.width, this.startButton.height);
+                
                 // Button border
                 ctx.strokeStyle = '#FFFFFF';
                 ctx.lineWidth = 2;
                 ctx.strokeRect(this.startButton.x, this.startButton.y, this.startButton.width, this.startButton.height);
+                
                 // Button text
                 ctx.fillStyle = '#FFFFFF';
                 ctx.font = '24px Arial';
