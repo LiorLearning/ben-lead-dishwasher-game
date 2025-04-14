@@ -211,13 +211,13 @@ var Game = /*#__PURE__*/ function() {
             isLoading: true,
             floatingTextClass: FloatingText,
             cameraOffset: 0,
-            // Create portal at initialization
+            // Create portal at initialization with proper initial state
             portal: {
                 x: CANVAS_WIDTH - 200,
                 y: GROUND_LEVEL - 120,
                 width: 80,
                 height: 120,
-                active: true
+                active: false
             },
             // Nether theme colors
             _netherColors: {
@@ -230,7 +230,8 @@ var Game = /*#__PURE__*/ function() {
             // Environment elements
             _lavaParticles: [],
             _floatingEmbers: [],
-            _piglinDistance: 0
+            _piglinDistance: 0,
+            bootsCrafted: false
         });
         // Pre-bind methods
         this._handleKeyDown = this._handleKeyDown.bind(this);
@@ -299,32 +300,38 @@ var Game = /*#__PURE__*/ function() {
                                 _this.lastTimestamp = 0;
                                 _this.isLoading = false;
                                 _this.bowCrafted = false;
-                                _this.bootsCrafted = false;
                                 // Boots crafting completion callback
                                 _this.onBootsCrafted = function() {
-                                    console.log('onBootsCrafted called - Starting portal creation process');
+                                    console.log('onBootsCrafted called - Starting portal activation');
                                     
                                     _this.bootsCrafted = true;
                                     _this.player.hasGoldenBoots = true;
                                     _this.player.speed *= 1.5;
                                     _this.player.jumpForce *= 1.2;
                                     
-                                    // Create portal at a visible position
-                                    _this.portal = {
-                                        x: CANVAS_WIDTH - 200,
-                                        y: GROUND_LEVEL - 120,
-                                        width: 80,
-                                        height: 120,
-                                        active: true
-                                    };
+                                    // Ensure portal exists and is properly positioned
+                                    if (!_this.portal) {
+                                        console.log('Creating new portal');
+                                        _this.portal = {
+                                            x: CANVAS_WIDTH - 200,
+                                            y: GROUND_LEVEL - 120,
+                                            width: 80,
+                                            height: 120,
+                                            active: true
+                                        };
+                                    } else {
+                                        console.log('Activating existing portal');
+                                        _this.portal.active = true;
+                                    }
 
-                                    console.log('Portal object created:', _this.portal);
-                                    console.log('Current game state:', {
+                                    // Debug logging
+                                    console.log('Portal state after boots crafted:', {
+                                        portalExists: !!_this.portal,
+                                        portalActive: _this.portal.active,
+                                        portalPosition: { x: _this.portal.x, y: _this.portal.y },
                                         bootsCrafted: _this.bootsCrafted,
                                         hasGoldenBoots: _this.player.hasGoldenBoots,
-                                        portalExists: !!_this.portal,
-                                        portalActive: _this.portal?.active,
-                                        portalPosition: { x: _this.portal?.x, y: _this.portal?.y }
+                                        playerPosition: { x: _this.player.x, y: _this.player.y }
                                     });
 
                                     _this.floatingTexts.push(new FloatingText('Golden Boots Crafted! Portal has appeared!', _this.player.x, _this.player.y - 40));
@@ -683,6 +690,18 @@ var Game = /*#__PURE__*/ function() {
             key: "render",
             value: function render() {
                 if (this.isLoading) return;
+
+                // Debug portal state at start of render
+                console.log('Render cycle - Portal state:', {
+                    portalExists: !!this.portal,
+                    portalActive: this.portal?.active,
+                    hasGoldenBoots: this.player?.hasGoldenBoots,
+                    portalX: this.portal?.x,
+                    portalY: this.portal?.y,
+                    cameraOffset: this.cameraOffset,
+                    playerX: this.player?.x
+                });
+
                 // Batch clear and transform operations
                 this.ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
                 // Apply screen shake with one condition check
@@ -841,44 +860,73 @@ var Game = /*#__PURE__*/ function() {
                 if (shouldShake) {
                     this.ctx.restore();
                 }
-                // Render portal if player has golden boots and game is in playing state
-                if (this.portal && this.player.hasGoldenBoots && this.gameState === GAME_STATE.PLAYING) {
-                    this.ctx.save();
-                    this.ctx.translate(-this.cameraOffset, 0);
-                    
-                    // Portal glow effect
-                    const gradient = this.ctx.createRadialGradient(
-                        this.portal.x + this.portal.width/2, this.portal.y + this.portal.height/2, 0,
-                        this.portal.x + this.portal.width/2, this.portal.y + this.portal.height/2, this.portal.width
-                    );
-                    gradient.addColorStop(0, 'rgba(138, 43, 226, 0.6)');
-                    gradient.addColorStop(1, 'rgba(138, 43, 226, 0)');
-                    this.ctx.fillStyle = gradient;
-                    this.ctx.fillRect(
-                        this.portal.x - this.portal.width/2,
-                        this.portal.y - this.portal.height/2,
-                        this.portal.width * 2,
-                        this.portal.height * 2
-                    );
-                    
-                    // Portal frame
-                    this.ctx.fillStyle = '#4B0082';
-                    this.ctx.fillRect(this.portal.x, this.portal.y, this.portal.width, this.portal.height);
-                    
-                    // Portal swirl effect
-                    const time = Date.now() / 1000;
-                    this.ctx.fillStyle = 'rgba(147, 112, 219, 0.5)';
-                    for (let i = 0; i < 5; i++) {
-                        const offset = Math.sin(time + i) * 10;
-                        this.ctx.fillRect(
-                            this.portal.x + 10,
-                            this.portal.y + offset + i * 20,
-                            this.portal.width - 20,
-                            10
+
+                // Only render portal during PLAYING state
+                if (this.gameState === GAME_STATE.PLAYING) {
+                    // Render portal with simplified condition and debug outline
+                    const portalShouldRender = this.portal && this.player.hasGoldenBoots;
+                    console.log('Portal render conditions:', {
+                        portalExists: !!this.portal,
+                        hasGoldenBoots: this.player?.hasGoldenBoots,
+                        shouldRender: portalShouldRender
+                    });
+
+                    if (portalShouldRender) {
+                        console.log('Attempting to render portal at:', {
+                            worldX: this.portal.x,
+                            worldY: this.portal.y,
+                            screenX: this.portal.x - this.cameraOffset,
+                            screenY: this.portal.y
+                        });
+
+                        this.ctx.save();
+                        this.ctx.translate(-this.cameraOffset, 0);
+                        
+                        // Debug outline to verify portal position
+                        this.ctx.strokeStyle = 'red';
+                        this.ctx.lineWidth = 2;
+                        this.ctx.strokeRect(
+                            this.portal.x - 2,
+                            this.portal.y - 2,
+                            this.portal.width + 4,
+                            this.portal.height + 4
                         );
+                        
+                        // Portal glow effect
+                        const gradient = this.ctx.createRadialGradient(
+                            this.portal.x + this.portal.width/2, this.portal.y + this.portal.height/2, 0,
+                            this.portal.x + this.portal.width/2, this.portal.y + this.portal.height/2, this.portal.width
+                        );
+                        gradient.addColorStop(0, 'rgba(138, 43, 226, 0.6)');
+                        gradient.addColorStop(1, 'rgba(138, 43, 226, 0)');
+                        this.ctx.fillStyle = gradient;
+                        this.ctx.fillRect(
+                            this.portal.x - this.portal.width/2,
+                            this.portal.y - this.portal.height/2,
+                            this.portal.width * 2,
+                            this.portal.height * 2
+                        );
+                        
+                        // Portal frame
+                        this.ctx.fillStyle = '#4B0082';
+                        this.ctx.fillRect(this.portal.x, this.portal.y, this.portal.width, this.portal.height);
+                        
+                        // Portal swirl effect
+                        const time = Date.now() / 1000;
+                        this.ctx.fillStyle = 'rgba(147, 112, 219, 0.5)';
+                        for (let i = 0; i < 5; i++) {
+                            const offset = Math.sin(time + i) * 10;
+                            this.ctx.fillRect(
+                                this.portal.x + 10,
+                                this.portal.y + offset + i * 20,
+                                this.portal.width - 20,
+                                10
+                            );
+                        }
+                        
+                        this.ctx.restore();
+                        console.log('Portal rendered successfully');
                     }
-                    
-                    this.ctx.restore();
                 }
                 // Render piglins if they exist
                 if (this.piglins) {
@@ -1262,22 +1310,38 @@ var Game = /*#__PURE__*/ function() {
         {
             key: "checkPortalCollision",
             value: function checkPortalCollision() {
-                if (!this.portal || !this.portal.active) return;
+                if (!this.portal || !this.player.hasGoldenBoots) return;
                 
                 const playerRight = this.player.x + this.player.width;
                 const playerLeft = this.player.x;
                 const portalRight = this.portal.x + this.portal.width;
                 const portalLeft = this.portal.x;
                 
+                // Debug collision check
+                console.log('Portal Collision Check:', {
+                    playerPosition: { x: this.player.x, y: this.player.y },
+                    playerBounds: { left: playerLeft, right: playerRight },
+                    portalBounds: { left: portalLeft, right: portalRight },
+                    portalY: this.portal.y,
+                    portalHeight: this.portal.height,
+                    hasGoldenBoots: this.player.hasGoldenBoots
+                });
+
                 if (playerRight >= portalLeft && 
                     playerLeft <= portalRight &&
                     this.player.y + this.player.height >= this.portal.y &&
                     this.player.y <= this.portal.y + this.portal.height) {
                     
-                    // Player reached the portal
+                    console.log('Portal collision detected! Triggering victory.');
+                    
+                    // Player reached the portal - trigger victory
                     this.gameState = GAME_STATE.VICTORY;
                     this.victoryScreen.show();
                     this.audioManager.play('collect', 1.5);
+                    
+                    // Add victory effect
+                    this.floatingTexts.push(new FloatingText('Level Complete!', this.player.x, this.player.y - 60));
+                    this.applyScreenShake(3);
                 }
             }
         },
