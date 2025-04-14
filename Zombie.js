@@ -103,7 +103,7 @@ var Zombie = /*#__PURE__*/ function() {
             value: function updateSpeed(goldNuggets) {
                 this.goldNuggetsCollected = goldNuggets;
                 var speedIncreases = Math.floor(this.goldNuggetsCollected / 6);
-                this.speed = this.baseSpeed + speedIncreases * 0.15;
+                this.speed = Math.min(this.baseSpeed + speedIncreases * 0.1, 1.2);
             }
         },
         {
