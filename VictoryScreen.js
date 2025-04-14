@@ -138,39 +138,103 @@ var VictoryScreen = /*#__PURE__*/ function() {
             key: "render",
             value: function render(ctx) {
                 if (!this.visible) return;
-                // Semi-transparent overlay
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+
+                // Semi-transparent overlay with animated gradient
+                const time = Date.now() / 1000;
+                const gradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
+                gradient.addColorStop(0, 'rgba(0, 0, 0, 0.8)');
+                gradient.addColorStop(0.5 + Math.sin(time) * 0.1, 'rgba(0, 0, 0, 0.85)');
+                gradient.addColorStop(1, 'rgba(0, 0, 0, 0.9)');
+                ctx.fillStyle = gradient;
                 ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-                // Victory background panel
+
+                // Victory panel with glowing border
                 ctx.fillStyle = '#2E7D32';
-                ctx.fillRect(CANVAS_WIDTH / 2 - 250, CANVAS_HEIGHT / 2 - 150, 500, 300);
-                // Panel border
+                const panelWidth = 500;
+                const panelHeight = 300;
+                const panelX = CANVAS_WIDTH / 2 - panelWidth / 2;
+                const panelY = CANVAS_HEIGHT / 2 - panelHeight / 2;
+                
+                // Panel shadow
+                ctx.shadowColor = 'rgba(46, 125, 50, 0.5)';
+                ctx.shadowBlur = 20;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+                ctx.fillRect(panelX, panelY, panelWidth, panelHeight);
+                
+                // Animated border glow
+                ctx.shadowColor = '#8BC34A';
+                ctx.shadowBlur = 10 + Math.sin(time * 2) * 5;
                 ctx.strokeStyle = '#8BC34A';
                 ctx.lineWidth = 4;
-                ctx.strokeRect(CANVAS_WIDTH / 2 - 250, CANVAS_HEIGHT / 2 - 150, 500, 300);
-                // Victory title
+                ctx.strokeRect(panelX, panelY, panelWidth, panelHeight);
+
+                // Reset shadow
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+
+                // Victory title with glow effect
                 ctx.fillStyle = '#FFEB3B';
-                ctx.font = 'bold 36px Arial';
+                ctx.font = 'bold 64px Arial';
                 ctx.textAlign = 'center';
-                ctx.fillText('VICTORY!', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 100);
-                // Victory message
+                ctx.shadowColor = '#FFD700';
+                ctx.shadowBlur = 15 + Math.sin(time * 3) * 5;
+                ctx.fillText('VICTORY!', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 60);
+
+                // Reset shadow for other text
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+
+                // Victory messages with subtle animation
                 ctx.fillStyle = 'white';
-                ctx.font = '20px Arial';
-                ctx.fillText('You found the portal with your Golden Boots!', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 50);
-                ctx.fillText('Level 3 to be designed by Sandro', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 20);
-                // Draw restart button
-                ctx.fillStyle = this.restartButton.hovered ? '#4CAF50' : '#388E3C';
-                ctx.fillRect(this.restartButton.x, this.restartButton.y, this.restartButton.width, this.restartButton.height);
+                ctx.font = '28px Arial';
+                const yOffset = Math.sin(time * 2) * 3;
+                ctx.fillText('Level 2 Complete!', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + yOffset);
+                ctx.fillText('Level 3 to be designed by Sandro', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 40 - yOffset);
+
+                // Animated play again button
+                const buttonHoverScale = this.restartButton.hovered ? 1.1 : 1;
+                const buttonWidth = this.restartButton.width * buttonHoverScale;
+                const buttonHeight = this.restartButton.height * buttonHoverScale;
+                const buttonX = CANVAS_WIDTH / 2 - buttonWidth / 2;
+                const buttonY = this.restartButton.y;
+
+                // Button glow effect
+                ctx.shadowColor = this.restartButton.hovered ? '#4CAF50' : '#388E3C';
+                ctx.shadowBlur = this.restartButton.hovered ? 20 : 10;
+                
+                // Button background with gradient
+                const buttonGradient = ctx.createLinearGradient(buttonX, buttonY, buttonX, buttonY + buttonHeight);
+                buttonGradient.addColorStop(0, this.restartButton.hovered ? '#4CAF50' : '#388E3C');
+                buttonGradient.addColorStop(1, this.restartButton.hovered ? '#45A049' : '#2E7D32');
+                ctx.fillStyle = buttonGradient;
+                
+                // Draw button with rounded corners
+                ctx.beginPath();
+                ctx.roundRect(buttonX, buttonY, buttonWidth, buttonHeight, 10);
+                ctx.fill();
+
                 // Button border
-                ctx.strokeStyle = '#FFFFFF';
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
                 ctx.lineWidth = 2;
-                ctx.strokeRect(this.restartButton.x, this.restartButton.y, this.restartButton.width, this.restartButton.height);
-                // Button text
+                ctx.stroke();
+
+                // Button text with shadow
                 ctx.fillStyle = '#FFFFFF';
-                ctx.font = '24px Arial';
+                ctx.font = 'bold 24px Arial';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillText(this.restartButton.text, this.restartButton.x + this.restartButton.width / 2, this.restartButton.y + this.restartButton.height / 2);
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+                ctx.shadowBlur = 5;
+                ctx.fillText(
+                    this.restartButton.text,
+                    CANVAS_WIDTH / 2,
+                    buttonY + buttonHeight / 2
+                );
+
+                // Reset shadow
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
             }
         }
     ]);

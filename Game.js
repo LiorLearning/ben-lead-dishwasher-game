@@ -211,6 +211,14 @@ var Game = /*#__PURE__*/ function() {
             isLoading: true,
             floatingTextClass: FloatingText,
             cameraOffset: 0,
+            // Create portal at initialization
+            portal: {
+                x: CANVAS_WIDTH - 200,
+                y: GROUND_LEVEL - 120,
+                width: 80,
+                height: 120,
+                active: true
+            },
             // Nether theme colors
             _netherColors: {
                 lava: '#FF4500',
@@ -294,23 +302,34 @@ var Game = /*#__PURE__*/ function() {
                                 _this.bootsCrafted = false;
                                 // Boots crafting completion callback
                                 _this.onBootsCrafted = function() {
+                                    console.log('onBootsCrafted called - Starting portal creation process');
+                                    
                                     _this.bootsCrafted = true;
-                                    _this.player.speed *= 1.5; // Increase movement speed
-                                    _this.player.jumpForce *= 1.2; // Increase jump power
-                                    _this.floatingTexts.push(new FloatingText('Golden Boots Crafted!', _this.player.x, _this.player.y - 40));
-                                    _this.audioManager.play('collect', 1.2);
-                                    _this.applyScreenShake(5);
+                                    _this.player.hasGoldenBoots = true;
+                                    _this.player.speed *= 1.5;
+                                    _this.player.jumpForce *= 1.2;
                                     
                                     // Create portal at a visible position
                                     _this.portal = {
-                                        x: CANVAS_WIDTH + 200, // Not too far right
-                                        y: GROUND_LEVEL - 120,  // Just above ground level
+                                        x: CANVAS_WIDTH - 200,
+                                        y: GROUND_LEVEL - 120,
                                         width: 80,
                                         height: 120,
                                         active: true
                                     };
 
-                                    console.log('Portal created at:', _this.portal.x, _this.portal.y);
+                                    console.log('Portal object created:', _this.portal);
+                                    console.log('Current game state:', {
+                                        bootsCrafted: _this.bootsCrafted,
+                                        hasGoldenBoots: _this.player.hasGoldenBoots,
+                                        portalExists: !!_this.portal,
+                                        portalActive: _this.portal?.active,
+                                        portalPosition: { x: _this.portal?.x, y: _this.portal?.y }
+                                    });
+
+                                    _this.floatingTexts.push(new FloatingText('Golden Boots Crafted! Portal has appeared!', _this.player.x, _this.player.y - 40));
+                                    _this.audioManager.play('collect', 1.2);
+                                    _this.applyScreenShake(5);
                                 };
                                 // Start game loop
                                 requestAnimationFrame(_this.update.bind(_this));
@@ -575,51 +594,58 @@ var Game = /*#__PURE__*/ function() {
         {
             key: "update",
             value: function update(timestamp) {
-                var deltaTime = timestamp - this.lastTimestamp;
+                const deltaTime = timestamp - this.lastTimestamp;
                 this.lastTimestamp = timestamp;
+
                 // Early exit for invalid frames
                 if (deltaTime <= 0) {
                     requestAnimationFrame(this._boundUpdate);
                     return;
                 }
+
                 // Batch state checks to minimize branching
-                var isPlaying = this.gameState === GAME_STATE.PLAYING;
-                var isQuiz = this.gameState === GAME_STATE.QUIZ;
+                const isPlaying = this.gameState === GAME_STATE.PLAYING;
+                const isQuiz = this.gameState === GAME_STATE.QUIZ;
+
                 if (isPlaying) {
                     // Process game updates in logical order
                     this.world.updateZombies(deltaTime);
                     this.world.updateMiningSpots(deltaTime);
                     this.player.update(deltaTime, this.world);
+
                     // Camera and viewport updates
                     this.cameraOffset = Math.max(0, this.player.x - CANVAS_WIDTH * 0.25);
                     this.updateCameraForWorld();
+
                     // Update world embers
                     this.world._updateEmbers();
+
                     // Effects updates
                     if (this.screenShakeTimer > 0) {
                         this.screenShakeTimer -= deltaTime;
                     }
+
                     // Collision and interaction checks
-                    var quizTriggered = this.world.checkPlatformCollisions(this.player).quizTriggered;
+                    const { quizTriggered } = this.world.checkPlatformCollisions(this.player);
                     if (quizTriggered) {
                         this.screenShakeIntensity = 0;
                         this.screenShakeTimer = 0;
                         this.gameState = GAME_STATE.QUIZ;
                         this.quizPanel.show();
                     }
+
                     // UI updates
                     this.touchControls.update();
                     this.updateFloatingTexts(deltaTime);
-                    // Zombie collision check (only if player is vulnerable)
-                    if (!this.player.isImmune) {
-                        var collidedZombie = this.world.checkZombieCollisions(this.player);
-                        if (collidedZombie) this.handleZombieCollision();
-                        
-                        // Check for lava collision
-                        if (this.checkLavaCollision()) {
-                            this.handleLavaCollision();
+
+                    // Zombie collision check (only if player is vulnerable and doesn't have golden boots)
+                    if (!this.player.isImmune && !this.player.hasGoldenBoots) {
+                        const collidedZombie = this.world.checkZombieCollisions(this.player);
+                        if (collidedZombie) {
+                            this.handleZombieCollision();
                         }
                     }
+
                     // Update piglins
                     this.updatePiglins(deltaTime);
                     
@@ -628,10 +654,12 @@ var Game = /*#__PURE__*/ function() {
                 } else if (isQuiz) {
                     this.quizPanel.update(deltaTime);
                 }
+
                 // Render at consistent 60fps using timestamp delta
                 if (deltaTime >= 16) {
                     this.render();
                 }
+
                 requestAnimationFrame(this._boundUpdate);
             }
         },
@@ -809,8 +837,8 @@ var Game = /*#__PURE__*/ function() {
                 if (shouldShake) {
                     this.ctx.restore();
                 }
-                // Render portal if it exists (MOVED HERE for correct rendering order)
-                if (this.portal && this.portal.active) {
+                // Render portal if player has golden boots and game is in playing state
+                if (this.portal && this.player.hasGoldenBoots && this.gameState === GAME_STATE.PLAYING) {
                     this.ctx.save();
                     this.ctx.translate(-this.cameraOffset, 0);
                     
@@ -819,7 +847,7 @@ var Game = /*#__PURE__*/ function() {
                         this.portal.x + this.portal.width/2, this.portal.y + this.portal.height/2, 0,
                         this.portal.x + this.portal.width/2, this.portal.y + this.portal.height/2, this.portal.width
                     );
-                    gradient.addColorStop(0, 'rgba(138, 43, 226, 0.6)'); // Purple glow
+                    gradient.addColorStop(0, 'rgba(138, 43, 226, 0.6)');
                     gradient.addColorStop(1, 'rgba(138, 43, 226, 0)');
                     this.ctx.fillStyle = gradient;
                     this.ctx.fillRect(
@@ -830,12 +858,12 @@ var Game = /*#__PURE__*/ function() {
                     );
                     
                     // Portal frame
-                    this.ctx.fillStyle = '#4B0082'; // Indigo
+                    this.ctx.fillStyle = '#4B0082';
                     this.ctx.fillRect(this.portal.x, this.portal.y, this.portal.width, this.portal.height);
                     
                     // Portal swirl effect
                     const time = Date.now() / 1000;
-                    this.ctx.fillStyle = 'rgba(147, 112, 219, 0.5)'; // Light purple
+                    this.ctx.fillStyle = 'rgba(147, 112, 219, 0.5)';
                     for (let i = 0; i < 5; i++) {
                         const offset = Math.sin(time + i) * 10;
                         this.ctx.fillRect(
@@ -948,38 +976,44 @@ var Game = /*#__PURE__*/ function() {
         {
             key: "handleZombieCollision",
             value: function handleZombieCollision() {
-                var _this = this;
-                // Player hit a zombie
+                if (this.player.hasGoldenBoots) return; // No effect if player has golden boots
+                
                 // Reset player position slightly back to avoid being immediately hit again
                 this.player.x -= 60 * (this.player.facingRight ? 1 : -1);
+
                 // Check if player has any resources to lose
-                var availableResources = [];
-                for(var type in this.resources){
+                let availableResources = [];
+                for (let type in this.resources) {
                     if (this.resources[type] >= 5) {
                         availableResources.push(type);
                     }
                 }
+
                 if (availableResources.length > 0) {
                     // Choose a random resource to reduce
-                    var resourceType = availableResources[Math.floor(Math.random() * availableResources.length)];
+                    const resourceType = availableResources[Math.floor(Math.random() * availableResources.length)];
                     this.resources[resourceType] -= 5;
-                    // Update crafting panel
-                    this.craftingPanel.updateResources(this.resources);
+                    
                     // Add visual feedback about resource loss
-                    this.floatingTexts.push(new FloatingText("-5 ".concat(resourceType, "!"), this.player.x, this.player.y - 40));
+                    this.floatingTexts.push(new FloatingText(`-5 ${resourceType}!`, this.player.x, this.player.y - 40));
                 }
+
                 // Add some visual feedback
                 this.floatingTexts.push(new FloatingText("Ouch!", this.player.x, this.player.y - 20));
+                
                 // Play hurt sound effect
                 this.audioManager.play('hurt', 0.7);
+                
                 // Apply screen shake effect
                 this.applyScreenShake(5);
+                
                 // Visual indication of being hit
                 this.player.isHit = true;
                 this.player.isImmune = true;
                 this.player.immunityTimer = 0;
-                setTimeout(function() {
-                    _this.player.isHit = false;
+                
+                setTimeout(() => {
+                    this.player.isHit = false;
                 }, 500);
             }
         },
@@ -1244,6 +1278,40 @@ var Game = /*#__PURE__*/ function() {
             }
         },
         {
+            key: "handlePiglinCollision",
+            value: function handlePiglinCollision() {
+                if (this.player.hasGoldenBoots) return; // No effect if player has golden boots
+                
+                // Reset player position slightly back to avoid being immediately hit again
+                this.player.x -= 60 * (this.player.facingRight ? 1 : -1);
+
+                // Check if player has gold nuggets to lose
+                if (this.resources.goldNuggets >= 5) {
+                    this.resources.goldNuggets -= 5;
+                    // Add visual feedback about gold loss
+                    this.floatingTexts.push(new FloatingText("-5 gold nuggets!", this.player.x, this.player.y - 40));
+                }
+
+                // Add some visual feedback
+                this.floatingTexts.push(new FloatingText("Ouch!", this.player.x, this.player.y - 20));
+                
+                // Play hurt sound effect
+                this.audioManager.play('hurt', 0.7);
+                
+                // Apply screen shake effect
+                this.applyScreenShake(5);
+                
+                // Visual indication of being hit
+                this.player.isHit = true;
+                this.player.isImmune = true;
+                this.player.immunityTimer = 0;
+                
+                setTimeout(() => {
+                    this.player.isHit = false;
+                }, 500);
+            }
+        },
+        {
             key: "updatePiglins",
             value: function updatePiglins(deltaTime) {
                 if (!this.piglins) return;
@@ -1257,19 +1325,30 @@ var Game = /*#__PURE__*/ function() {
                             piglin.x += piglin.speed;
                         }
                         
-                        // Check collision with player
+                        // Check collision with player only if not wearing golden boots
                         if (!this.player.isImmune &&
                             piglin.x < this.player.x + this.player.width &&
                             piglin.x + piglin.width > this.player.x &&
                             piglin.y < this.player.y + this.player.height &&
                             piglin.y + piglin.height > this.player.y) {
-                            this.handleZombieCollision();
+                            this.handlePiglinCollision();
+                        }
+                    } else {
+                        // If player has golden boots, make piglins move away
+                        const distanceToPlayer = Math.abs(piglin.x - this.player.x);
+                        if (distanceToPlayer < 200) { // Only move away if player is within 200 pixels
+                            if (piglin.x > this.player.x) {
+                                piglin.x += piglin.speed;
+                            } else {
+                                piglin.x -= piglin.speed;
+                            }
                         }
                     }
                 });
             }
         },
         {
+<<<<<<< HEAD
             key: "checkLavaCollision",
             value: function checkLavaCollision() {
                 // Lava rivers data - each entry defines a river's position and size
@@ -1349,6 +1428,18 @@ var Game = /*#__PURE__*/ function() {
                 setTimeout(function() {
                     _this.player.isHit = false;
                 }, 500);
+=======
+            key: "checkPortalState",
+            value: function checkPortalState() {
+                console.log('Portal State:', {
+                    portalExists: !!this.portal,
+                    portalActive: this.portal?.active,
+                    portalPosition: this.portal ? { x: this.portal.x, y: this.portal.y } : null,
+                    bootsCrafted: this.bootsCrafted,
+                    hasGoldenBoots: this.player?.hasGoldenBoots,
+                    gameState: this.gameState
+                });
+>>>>>>> 9a63c0e (Gameplay)
             }
         }
     ]);
