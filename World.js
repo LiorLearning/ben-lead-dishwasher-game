@@ -158,47 +158,42 @@ var World = /*#__PURE__*/ function() {
         {
             key: "generateMiningSpots",
             value: function generateMiningSpots() {
-                var _this = this;
                 // Place mining spots on platforms
-                this.platforms.forEach(function(platform, index) {
+                this.platforms.forEach((platform, index) => {
                     // Skip the ground platform (index 0)
                     if (index === 0) return;
-                    // Always use gold blocks as the resource type
-                    var resourceType = 'gold block';
+
+                    // Use gold nuggets instead of gold blocks
+                    const resourceType = 'gold nugget';
+
                     // Position mining spot near the platform
-                    var miningSpot = new MiningSpot(platform.x + platform.width / 2 - 20, platform.y - 55, resourceType);
-                    _this.miningSpots.push(miningSpot);
+                    const miningSpot = new MiningSpot(
+                        platform.x + platform.width / 2 - 20,
+                        platform.y - 55,
+                        resourceType
+                    );
+                    this.miningSpots.push(miningSpot);
+
                     // Add a zombie to guard this mining spot if it doesn't already have one
                     // Check if there's already a zombie guarding this platform
-                    var hasGuard = false;
-                    var _iteratorNormalCompletion = true, _didIteratorError = false, _iteratorError = undefined;
-                    try {
-                        for(var _iterator = _this.zombies[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true){
-                            var zombie = _step.value;
-                            if (zombie.platform === platform) {
-                                hasGuard = true;
-                                break;
-                            }
-                        }
-                    } catch (err) {
-                        _didIteratorError = true;
-                        _iteratorError = err;
-                    } finally{
-                        try {
-                            if (!_iteratorNormalCompletion && _iterator.return != null) {
-                                _iterator.return();
-                            }
-                        } finally{
-                            if (_didIteratorError) {
-                                throw _iteratorError;
-                            }
+                    let hasGuard = false;
+                    for (const zombie of this.zombies) {
+                        if (zombie.platform === platform) {
+                            hasGuard = true;
+                            break;
                         }
                     }
+
                     // If no guard exists, add one
                     if (!hasGuard) {
-                        var patrolStart = platform.x + 20;
-                        var patrolEnd = platform.x + platform.width - 20;
-                        _this.zombies.push(new Zombie(platform.x + platform.width / 2, patrolStart, patrolEnd, platform));
+                        const patrolStart = platform.x + 20;
+                        const patrolEnd = platform.x + platform.width - 20;
+                        this.zombies.push(new Zombie(
+                            platform.x + platform.width / 2,
+                            patrolStart,
+                            patrolEnd,
+                            platform
+                        ));
                     }
                 });
             }
@@ -556,32 +551,36 @@ var World = /*#__PURE__*/ function() {
                         var screenX1 = item.x - cameraOffset;
                         // Only draw if visible on screen
                         if (screenX1 > -item.width && screenX1 < CANVAS_WIDTH) {
-                            // Draw gold block texture with proper Minecraft-style shading
-                            var goldTexture = this.assetLoader.getAsset('gold block');
-                            var blockWidth = 40;
-                            var blockHeight = 40;
-                            if (goldTexture) {
-                                // Main block
-                                ctx.drawImage(goldTexture, screenX1, item.y, blockWidth, blockHeight);
-                                // Top highlight
-                                ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-                                ctx.fillRect(screenX1, item.y, blockWidth, 5);
-                                // Side shadow
-                                ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
-                                ctx.fillRect(screenX1, item.y + 5, 5, blockHeight - 5);
-                            } else {
-                                // Fallback gold block
-                                ctx.fillStyle = '#FFD700';
-                                ctx.fillRect(screenX1, item.y, blockWidth, blockHeight);
-                                // Top highlight
-                                ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-                                ctx.fillRect(screenX1, item.y, blockWidth, 5);
-                                // Side shadow
-                                ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
-                                ctx.fillRect(screenX1, item.y + 5, 5, blockHeight - 5);
+                            if (item.type === 'gold nugget') {
+                                this.drawGoldNugget(ctx, screenX1, item.y);
+                            } else if (item.type === 'gold block') {
+                                // Draw gold block texture with proper Minecraft-style shading
+                                var goldTexture = this.assetLoader.getAsset('gold block');
+                                var blockWidth = 40;
+                                var blockHeight = 40;
+                                if (goldTexture) {
+                                    // Main block
+                                    ctx.drawImage(goldTexture, screenX1, item.y, blockWidth, blockHeight);
+                                    // Top highlight
+                                    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                                    ctx.fillRect(screenX1, item.y, blockWidth, 5);
+                                    // Side shadow
+                                    ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+                                    ctx.fillRect(screenX1, item.y + 5, 5, blockHeight - 5);
+                                } else {
+                                    // Fallback gold block
+                                    ctx.fillStyle = '#FFD700';
+                                    ctx.fillRect(screenX1, item.y, blockWidth, blockHeight);
+                                    // Top highlight
+                                    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                                    ctx.fillRect(screenX1, item.y, blockWidth, 5);
+                                    // Side shadow
+                                    ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+                                    ctx.fillRect(screenX1, item.y + 5, 5, blockHeight - 5);
+                                }
                             }
                             // Draw label if needed
-                            if (item.type && item.type !== 'gold block') {
+                            if (item.type) {
                                 ctx.fillStyle = 'white';
                                 ctx.font = '12px Arial';
                                 ctx.fillText(item.type, screenX1, item.y - 5);
@@ -703,6 +702,35 @@ var World = /*#__PURE__*/ function() {
                 // Feather stem
                 ctx.fillStyle = '#DDD';
                 ctx.fillRect(x + 9, y + 5, 2, 30);
+            }
+        },
+        {
+            key: "drawGoldNugget",
+            value: function drawGoldNugget(ctx, x, y) {
+                const nuggetSize = 20;
+                const goldTexture = this.assetLoader.getAsset('gold nugget');
+                
+                if (goldTexture) {
+                    ctx.drawImage(goldTexture, x, y, nuggetSize, nuggetSize);
+                    
+                    // Add a subtle glow effect
+                    ctx.save();
+                    ctx.globalAlpha = 0.3;
+                    ctx.shadowColor = '#FFD700';
+                    ctx.shadowBlur = 10;
+                    ctx.drawImage(goldTexture, x, y, nuggetSize, nuggetSize);
+                    ctx.restore();
+                } else {
+                    // Fallback if texture isn't loaded
+                    ctx.fillStyle = '#FFD700';
+                    ctx.fillRect(x, y, nuggetSize, nuggetSize);
+                    
+                    // Add shading for 3D effect
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                    ctx.fillRect(x, y, nuggetSize, 5);
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                    ctx.fillRect(x, y + 5, 5, nuggetSize - 5);
+                }
             }
         },
         {

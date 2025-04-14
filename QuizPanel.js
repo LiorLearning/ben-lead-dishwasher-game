@@ -24,10 +24,15 @@ var QuizPanel = /*#__PURE__*/ function() {
         _class_call_check(this, QuizPanel);
         this.game = game;
         this.visible = false;
-        this.width = 400;
-        this.height = 300;
+        this.fadeIn = 0;
+        this.lastTime = Date.now();
+        
+        // Panel dimensions
+        this.width = 360;
+        this.height = 280;
         this.x = CANVAS_WIDTH / 2 - this.width / 2;
         this.y = CANVAS_HEIGHT / 2 - this.height / 2;
+        
         // Quiz content
         this.currentQuiz = null;
         this.selectedAnswer = null;
@@ -35,48 +40,50 @@ var QuizPanel = /*#__PURE__*/ function() {
         this.feedbackColor = 'white';
         this.showingFeedback = false;
         this.feedbackTimer = 0;
+        this.buttonAnimations = [0, 0, 0, 0]; // Animation progress for each button
+
         // Quiz question bank - educational questions on various topic
         this.quizQuestions = [
             {
-                question: "What is 9 × 7?",
+                question: "What is 7 × 8?",
                 answers: [
+                    "48",
+                    "54",
                     "56",
-                    "63",
-                    "72",
-                    "81"
+                    "64"
                 ],
-                correctAnswer: 1,
+                correctAnswer: 2,
                 reward: {
                     type: "goldNuggets",
-                    amount: 2
+                    amount: 6
                 }
             },
             {
-                question: "What is 8 × 7?",
-                answers: [
-                    "56",
-                    "63",
-                    "72",
-                    "81"
-                ],
-                correctAnswer: 0,
-                reward: {
-                    type: "goldNuggets",
-                    amount: 2
-                }
-            },
-            {
-                question: "What is 56 ÷ 8?",
+                question: "What is 64 ÷ 8?",
                 answers: [
                     "6",
                     "7",
                     "8",
                     "9"
                 ],
+                correctAnswer: 2,
+                reward: {
+                    type: "goldNuggets",
+                    amount: 6
+                }
+            },
+            {
+                question: "What is 6 × 9?",
+                answers: [
+                    "45",
+                    "54",
+                    "56",
+                    "63"
+                ],
                 correctAnswer: 1,
                 reward: {
                     type: "goldNuggets",
-                    amount: 2
+                    amount: 6
                 }
             },
             {
@@ -90,91 +97,91 @@ var QuizPanel = /*#__PURE__*/ function() {
                 correctAnswer: 2,
                 reward: {
                     type: "goldNuggets",
-                    amount: 2
+                    amount: 6
                 }
             },
             {
-                question: "What is 6 × 8?",
+                question: "What is 5 × 7?",
                 answers: [
-                    "42",
-                    "46",
-                    "48",
-                    "54"
+                    "25",
+                    "30",
+                    "35",
+                    "40"
                 ],
                 correctAnswer: 2,
                 reward: {
                     type: "goldNuggets",
-                    amount: 2
+                    amount: 6
                 }
             },
             {
-                question: "What is 72 ÷ 8?",
+                question: "What is 36 ÷ 6?",
                 answers: [
-                    "9",
-                    "8",
-                    "7",
-                    "6"
-                ],
-                correctAnswer: 0,
-                reward: {
-                    type: "goldNuggets",
-                    amount: 2
-                }
-            },
-            {
-                question: "What is 7 × 6?",
-                answers: [
-                    "42",
-                    "49",
-                    "36",
-                    "48"
-                ],
-                correctAnswer: 0,
-                reward: {
-                    type: "goldNuggets",
-                    amount: 2
-                }
-            },
-            {
-                question: "What is 63 ÷ 7?",
-                answers: [
-                    "7",
-                    "8",
-                    "9",
-                    "10"
+                    "4",
+                    "5",
+                    "6",
+                    "7"
                 ],
                 correctAnswer: 2,
                 reward: {
                     type: "goldNuggets",
-                    amount: 2
+                    amount: 6
                 }
             },
             {
-                question: "What is 9 × 6?",
+                question: "What is 8 × 4?",
                 answers: [
-                    "54",
-                    "56",
-                    "63",
-                    "64"
+                    "24",
+                    "28",
+                    "32",
+                    "36"
                 ],
-                correctAnswer: 0,
+                correctAnswer: 2,
                 reward: {
                     type: "goldNuggets",
-                    amount: 2
+                    amount: 6
                 }
             },
             {
-                question: "What is 48 ÷ 6?",
+                question: "What is 49 ÷ 7?",
                 answers: [
+                    "5",
                     "6",
                     "7",
-                    "8",
-                    "9"
+                    "8"
                 ],
                 correctAnswer: 2,
                 reward: {
                     type: "goldNuggets",
-                    amount: 2
+                    amount: 6
+                }
+            },
+            {
+                question: "What is 3 × 6?",
+                answers: [
+                    "12",
+                    "15",
+                    "18",
+                    "21"
+                ],
+                correctAnswer: 2,
+                reward: {
+                    type: "goldNuggets",
+                    amount: 6
+                }
+            },
+            {
+                question: "What is 25 ÷ 5?",
+                answers: [
+                    "3",
+                    "4",
+                    "5",
+                    "6"
+                ],
+                correctAnswer: 2,
+                reward: {
+                    type: "goldNuggets",
+                    amount: 6
                 }
             }
         ];
@@ -184,37 +191,73 @@ var QuizPanel = /*#__PURE__*/ function() {
         {
             key: "setupListeners",
             value: function setupListeners() {
-                // Mouse click handler for answering questions
+                this.mouseMoveHandler = this.handleMouseMove.bind(this);
                 this.clickHandler = this.handleClick.bind(this);
-                this.game.canvas.addEventListener('click', this.clickHandler);
-                // Touch handler for mobile
                 this.touchHandler = this.handleTouch.bind(this);
+                
+                this.game.canvas.addEventListener('mousemove', this.mouseMoveHandler);
+                this.game.canvas.addEventListener('click', this.clickHandler);
                 this.game.canvas.addEventListener('touchstart', this.touchHandler);
             }
         },
         {
             key: "removeListeners",
             value: function removeListeners() {
+                this.game.canvas.removeEventListener('mousemove', this.mouseMoveHandler);
                 this.game.canvas.removeEventListener('click', this.clickHandler);
                 this.game.canvas.removeEventListener('touchstart', this.touchHandler);
+            }
+        },
+        {
+            key: "handleMouseMove",
+            value: function handleMouseMove(event) {
+                if (!this.visible) return;
+                const rect = this.game.canvas.getBoundingClientRect();
+                const mouseX = (event.clientX - rect.left) * (this.game.canvas.width / rect.width);
+                const mouseY = (event.clientY - rect.top) * (this.game.canvas.height / rect.height);
+
+                // Check button hover states
+                if (this.currentQuiz) {
+                    const buttonHeight = 40;
+                    const buttonSpacing = 12;
+                    const startY = this.y + 120;
+
+                    for (let i = 0; i < this.currentQuiz.answers.length; i++) {
+                        const buttonY = startY + i * (buttonHeight + buttonSpacing);
+                        const isHovered = mouseX >= this.x + 30 && 
+                                        mouseX <= this.x + this.width - 30 && 
+                                        mouseY >= buttonY && 
+                                        mouseY <= buttonY + buttonHeight;
+                        
+                        // Update button animation
+                        if (isHovered && this.buttonAnimations[i] < 1) {
+                            this.buttonAnimations[i] = Math.min(1, this.buttonAnimations[i] + 0.1);
+                        } else if (!isHovered && this.buttonAnimations[i] > 0) {
+                            this.buttonAnimations[i] = Math.max(0, this.buttonAnimations[i] - 0.1);
+                        }
+                    }
+                }
             }
         },
         {
             key: "handleClick",
             value: function handleClick(event) {
                 if (!this.visible) return;
-                var rect = this.game.canvas.getBoundingClientRect();
-                var mouseX = (event.clientX - rect.left) * (this.game.canvas.width / rect.width);
-                var mouseY = (event.clientY - rect.top) * (this.game.canvas.height / rect.height);
-                // Check if an answer was clicked
+                const rect = this.game.canvas.getBoundingClientRect();
+                const mouseX = (event.clientX - rect.left) * (this.game.canvas.width / rect.width);
+                const mouseY = (event.clientY - rect.top) * (this.game.canvas.height / rect.height);
+
                 if (this.currentQuiz) {
-                    var answers = this.currentQuiz.answers;
-                    var buttonHeight = 40;
-                    var buttonSpacing = 15;
-                    var startY = this.y + 120;
-                    for(var i = 0; i < answers.length; i++){
-                        var buttonY = startY + i * (buttonHeight + buttonSpacing);
-                        if (mouseX >= this.x + 50 && mouseX <= this.x + this.width - 50 && mouseY >= buttonY && mouseY <= buttonY + buttonHeight) {
+                    const buttonHeight = 40;
+                    const buttonSpacing = 12;
+                    const startY = this.y + 120;
+
+                    for (let i = 0; i < this.currentQuiz.answers.length; i++) {
+                        const buttonY = startY + i * (buttonHeight + buttonSpacing);
+                        if (mouseX >= this.x + 30 && 
+                            mouseX <= this.x + this.width - 30 && 
+                            mouseY >= buttonY && 
+                            mouseY <= buttonY + buttonHeight) {
                             this.selectedAnswer = i;
                             this.checkAnswer();
                             break;
@@ -228,19 +271,22 @@ var QuizPanel = /*#__PURE__*/ function() {
             value: function handleTouch(event) {
                 if (!this.visible) return;
                 event.preventDefault();
-                var rect = this.game.canvas.getBoundingClientRect();
-                var touch = event.touches[0];
-                var touchX = (touch.clientX - rect.left) * (this.game.canvas.width / rect.width);
-                var touchY = (touch.clientY - rect.top) * (this.game.canvas.height / rect.height);
-                // Use the same logic as click handler
+                const rect = this.game.canvas.getBoundingClientRect();
+                const touch = event.touches[0];
+                const touchX = (touch.clientX - rect.left) * (this.game.canvas.width / rect.width);
+                const touchY = (touch.clientY - rect.top) * (this.game.canvas.height / rect.height);
+
                 if (this.currentQuiz) {
-                    var answers = this.currentQuiz.answers;
-                    var buttonHeight = 40;
-                    var buttonSpacing = 15;
-                    var startY = this.y + 120;
-                    for(var i = 0; i < answers.length; i++){
-                        var buttonY = startY + i * (buttonHeight + buttonSpacing);
-                        if (touchX >= this.x + 50 && touchX <= this.x + this.width - 50 && touchY >= buttonY && touchY <= buttonY + buttonHeight) {
+                    const buttonHeight = 40;
+                    const buttonSpacing = 12;
+                    const startY = this.y + 120;
+
+                    for (let i = 0; i < this.currentQuiz.answers.length; i++) {
+                        const buttonY = startY + i * (buttonHeight + buttonSpacing);
+                        if (touchX >= this.x + 30 && 
+                            touchX <= this.x + this.width - 30 && 
+                            touchY >= buttonY && 
+                            touchY <= buttonY + buttonHeight) {
                             this.selectedAnswer = i;
                             this.checkAnswer();
                             break;
@@ -253,10 +299,13 @@ var QuizPanel = /*#__PURE__*/ function() {
             key: "show",
             value: function show(miningSpot) {
                 this.visible = true;
+                this.fadeIn = 0;
+                this.lastTime = Date.now();
                 this.selectRandomQuiz();
                 this.selectedAnswer = null;
                 this.showingFeedback = false;
-                this.currentMiningSpot = miningSpot; // Store reference to the mining spot
+                this.currentMiningSpot = miningSpot;
+                this.buttonAnimations = [0, 0, 0, 0];
             }
         },
         {
@@ -332,7 +381,7 @@ var QuizPanel = /*#__PURE__*/ function() {
                 var item = {
                     type: this.currentMiningSpot.type,
                     x: this.currentMiningSpot.x,
-                    y: this.currentMiningSpot.y - 30,
+                    y: this.currentMiningSpot.y - 10,
                     width: 30,
                     height: 30,
                     id: "".concat(this.currentMiningSpot.type, "-").concat(Date.now())
@@ -342,7 +391,7 @@ var QuizPanel = /*#__PURE__*/ function() {
                 // Mark mining spot as having spawned a resource
                 this.currentMiningSpot.resourceSpawned = true;
                 // Add floating text indicating resource spawned
-                this.game.floatingTexts.push(new this.game.floatingTextClass("Gold nuggets appeared!", this.currentMiningSpot.x, this.currentMiningSpot.y - 50));
+                this.game.floatingTexts.push(new this.game.floatingTextClass("Gold nuggets appeared!", this.currentMiningSpot.x, this.currentMiningSpot.y - 40));
             }
         },
         {
@@ -359,225 +408,137 @@ var QuizPanel = /*#__PURE__*/ function() {
         {
             key: "render",
             value: function render(ctx) {
-                if (!this.visible) return;
+                if (!this.visible || !this.currentQuiz) return;
+
+                const currentTime = Date.now();
+                const deltaTime = (currentTime - this.lastTime) / 1000;
+                this.lastTime = currentTime;
                 
-                // Semi-transparent overlay with more opacity for better focus
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                // Update fade in
+                this.fadeIn = Math.min(1, this.fadeIn + deltaTime * 2);
+
+                const time = currentTime / 1000;
+
+                ctx.save();
+
+                // Semi-transparent overlay with fade
+                ctx.fillStyle = `rgba(0, 0, 0, ${0.5 * this.fadeIn})`;
                 ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-                
-                // Quiz panel background with gradient for depth
-                const gradient = ctx.createLinearGradient(this.x, this.y, this.x, this.y + this.height);
-                gradient.addColorStop(0, '#2c3e50');  // Darker top
-                gradient.addColorStop(1, '#34495e');  // Lighter bottom
-                ctx.fillStyle = gradient;
+
+                // Panel shadow
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                ctx.fillRect(this.x + 4, this.y + 4, this.width, this.height);
+
+                // Panel background
+                ctx.fillStyle = `rgba(28, 28, 28, ${0.95 * this.fadeIn})`;
                 ctx.fillRect(this.x, this.y, this.width, this.height);
-                
-                // Panel border with better texture appearance
-                const borderWidth = 6;  // Slightly thicker border
-                ctx.fillStyle = '#8B4513'; // Wood color
-                
-                // Draw border with slight texture variation
-                // Top border
-                for (let x = this.x - borderWidth; x < this.x + this.width + borderWidth; x += 8) {
-                    const variation = Math.random() * 3 - 1;
-                    ctx.fillRect(x, this.y - borderWidth, 8, borderWidth + variation);
-                }
-                
-                // Bottom border
-                for (let x = this.x - borderWidth; x < this.x + this.width + borderWidth; x += 8) {
-                    const variation = Math.random() * 3 - 1;
-                    ctx.fillRect(x, this.y + this.height, 8, borderWidth + variation);
-                }
-                
-                // Left border
-                for (let y = this.y; y < this.y + this.height; y += 8) {
-                    const variation = Math.random() * 3 - 1;
-                    ctx.fillRect(this.x - borderWidth, y, borderWidth + variation, 8);
-                }
-                
-                // Right border
-                for (let y = this.y; y < this.y + this.height; y += 8) {
-                    const variation = Math.random() * 3 - 1;
-                    ctx.fillRect(this.x + this.width, y, borderWidth + variation, 8);
-                }
-                
-                // Enhanced pixelated corners (Minecraft style)
-                ctx.fillRect(this.x - borderWidth * 2, this.y - borderWidth * 2, borderWidth, borderWidth); // Top-left
-                ctx.fillRect(this.x + this.width + borderWidth, this.y - borderWidth * 2, borderWidth, borderWidth); // Top-right
-                ctx.fillRect(this.x - borderWidth * 2, this.y + this.height + borderWidth, borderWidth, borderWidth); // Bottom-left
-                ctx.fillRect(this.x + this.width + borderWidth, this.y + this.height + borderWidth, borderWidth, borderWidth); // Bottom-right
-                
-                if (this.currentQuiz) {
-                    // Quiz title with text shadow for better visibility
-                    ctx.fillStyle = '#F8F8F8';
-                    ctx.font = 'bold 28px Arial';
+
+                // Panel border
+                this.drawPixelBorder(ctx, this.x, this.y, this.width, this.height, '#B84015');
+
+                // Inner panel accent
+                ctx.fillStyle = '#B84015';
+                ctx.fillRect(this.x + 12, this.y + 70, this.width - 24, 2);
+
+                // Title with pixel shadow
+                ctx.font = 'bold 20px "Press Start 2P", monospace';
+                ctx.textAlign = 'center';
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                ctx.fillText('Question', this.x + this.width/2 + 1, this.y + 41);
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillText('Question', this.x + this.width/2, this.y + 40);
+
+                // Question text with pixel shadow
+                ctx.font = '16px "Press Start 2P", monospace';
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                ctx.fillText(this.currentQuiz.question, this.x + this.width/2 + 1, this.y + 91);
+                ctx.fillStyle = '#E0E0E0';
+                ctx.fillText(this.currentQuiz.question, this.x + this.width/2, this.y + 90);
+
+                // Render answer buttons
+                const buttonHeight = 40;
+                const buttonSpacing = 12;
+                const startY = this.y + 120;
+                const buttonWidth = this.width - 60;
+
+                this.currentQuiz.answers.forEach((answer, index) => {
+                    const buttonY = startY + index * (buttonHeight + buttonSpacing);
+                    this.renderButton(
+                        ctx,
+                        `${index + 1}. ${answer}`,
+                        this.x + 30,
+                        buttonY,
+                        buttonWidth,
+                        buttonHeight,
+                        index,
+                        time
+                    );
+                });
+
+                // Render feedback if showing
+                if (this.showingFeedback) {
+                    const feedbackY = startY + this.currentQuiz.answers.length * (buttonHeight + buttonSpacing) + 20;
+                    
+                    ctx.font = '16px "Press Start 2P", monospace';
                     ctx.textAlign = 'center';
-                    
-                    // Add text shadow
-                    ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
-                    ctx.shadowBlur = 5;
-                    ctx.shadowOffsetX = 2;
-                    ctx.shadowOffsetY = 2;
-                    ctx.fillText('Question', this.x + this.width / 2, this.y + 35);
-                    
-                    // Reset shadow
-                    ctx.shadowColor = 'transparent';
-                    ctx.shadowBlur = 0;
-                    ctx.shadowOffsetX = 0;
-                    ctx.shadowOffsetY = 0;
-                    
-                    // Question text with better contrast
-                    ctx.fillStyle = '#FFFFFF';
-                    ctx.font = 'bold 20px Arial';
-                    
-                    // Add subtle highlight to question area
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-                    const questionAreaHeight = 60;
-                    ctx.fillRect(this.x + 20, this.y + 45, this.width - 40, questionAreaHeight);
-                    
-                    // Question text
-                    ctx.fillStyle = '#FFFFFF';
-                    ctx.font = 'bold 20px Arial';
-                    // Handle long questions with wrapping
-                    this.wrapText(ctx, this.currentQuiz.question, this.x + this.width / 2, this.y + 70, this.width - 40, 25);
-                    
-                    // Answer options with improved buttons and hover effect
-                    const answers = this.currentQuiz.answers;
-                    const buttonHeight = 45; // Taller buttons
-                    const buttonSpacing = 12;
-                    const startY = this.y + 120;
-                    
-                    for (let i = 0; i < answers.length; i++) {
-                        const buttonY = startY + i * (buttonHeight + buttonSpacing);
-                        
-                        // Button background with gradient
-                        const buttonGradient = ctx.createLinearGradient(
-                            this.x + 50, buttonY, 
-                            this.x + 50, buttonY + buttonHeight
-                        );
-                        
-                        if (this.selectedAnswer === i) {
-                            // Selected button
-                            buttonGradient.addColorStop(0, '#3498db');
-                            buttonGradient.addColorStop(1, '#2980b9');
-                        } else {
-                            // Normal button
-                            buttonGradient.addColorStop(0, '#2980b9');
-                            buttonGradient.addColorStop(1, '#1f618d');
-                        }
-                        
-                        ctx.fillStyle = buttonGradient;
-                        
-                        // Button with rounded corners
-                        const cornerRadius = 5;
-                        ctx.beginPath();
-                        ctx.moveTo(this.x + 50 + cornerRadius, buttonY);
-                        ctx.lineTo(this.x + this.width - 50 - cornerRadius, buttonY);
-                        ctx.quadraticCurveTo(this.x + this.width - 50, buttonY, this.x + this.width - 50, buttonY + cornerRadius);
-                        ctx.lineTo(this.x + this.width - 50, buttonY + buttonHeight - cornerRadius);
-                        ctx.quadraticCurveTo(this.x + this.width - 50, buttonY + buttonHeight, this.x + this.width - 50 - cornerRadius, buttonY + buttonHeight);
-                        ctx.lineTo(this.x + 50 + cornerRadius, buttonY + buttonHeight);
-                        ctx.quadraticCurveTo(this.x + 50, buttonY + buttonHeight, this.x + 50, buttonY + buttonHeight - cornerRadius);
-                        ctx.lineTo(this.x + 50, buttonY + cornerRadius);
-                        ctx.quadraticCurveTo(this.x + 50, buttonY, this.x + 50 + cornerRadius, buttonY);
-                        ctx.closePath();
-                        ctx.fill();
-                        
-                        // Button glow effect when selected
-                        if (this.selectedAnswer === i) {
-                            ctx.shadowColor = 'rgba(52, 152, 219, 0.7)';
-                            ctx.shadowBlur = 10;
-                            ctx.strokeStyle = '#5DADE2';
-                            ctx.lineWidth = 2;
-                            ctx.stroke();
-                            ctx.shadowColor = 'transparent';
-                            ctx.shadowBlur = 0;
-                        } else {
-                            // Button border
-                            ctx.strokeStyle = '#1f618d';
-                            ctx.lineWidth = 2;
-                            ctx.stroke();
-                        }
-                        
-                        // Answer text
-                        ctx.fillStyle = '#FFFFFF';
-                        ctx.font = '18px Arial';
-                        ctx.textAlign = 'left';
-                        ctx.fillText(`${i + 1}. ${answers[i]}`, this.x + 70, buttonY + buttonHeight / 2 + 6);
-                    }
-                    
-                    // Feedback message with animation
-                    if (this.showingFeedback) {
-                        // Calculate animation progress (0 to 1)
-                        const maxFeedbackTime = 2000;
-                        const animationProgress = 1 - (this.feedbackTimer / maxFeedbackTime);
-                        
-                        // Apply scale and opacity based on animation
-                        const scale = 0.8 + (0.2 * animationProgress);
-                        const opacity = Math.min(1, animationProgress * 3);
-                        
-                        ctx.save();
-                        ctx.globalAlpha = opacity;
-                        
-                        // Center position
-                        const centerX = this.x + this.width / 2;
-                        const centerY = startY + answers.length * (buttonHeight + buttonSpacing) + 25;
-                        
-                        // Create feedback message background
-                        ctx.fillStyle = this.feedbackColor === '#4CAF50' ? 'rgba(76, 175, 80, 0.2)' : 'rgba(244, 67, 54, 0.2)';
-                        const msgWidth = 300;
-                        const msgHeight = 40;
-                        
-                        // Draw rounded rectangle for feedback message
-                        ctx.beginPath();
-                        ctx.moveTo(centerX - msgWidth/2 + 10, centerY - msgHeight/2);
-                        ctx.lineTo(centerX + msgWidth/2 - 10, centerY - msgHeight/2);
-                        ctx.quadraticCurveTo(centerX + msgWidth/2, centerY - msgHeight/2, centerX + msgWidth/2, centerY - msgHeight/2 + 10);
-                        ctx.lineTo(centerX + msgWidth/2, centerY + msgHeight/2 - 10);
-                        ctx.quadraticCurveTo(centerX + msgWidth/2, centerY + msgHeight/2, centerX + msgWidth/2 - 10, centerY + msgHeight/2);
-                        ctx.lineTo(centerX - msgWidth/2 + 10, centerY + msgHeight/2);
-                        ctx.quadraticCurveTo(centerX - msgWidth/2, centerY + msgHeight/2, centerX - msgWidth/2, centerY + msgHeight/2 - 10);
-                        ctx.lineTo(centerX - msgWidth/2, centerY - msgHeight/2 + 10);
-                        ctx.quadraticCurveTo(centerX - msgWidth/2, centerY - msgHeight/2, centerX - msgWidth/2 + 10, centerY - msgHeight/2);
-                        ctx.closePath();
-                        ctx.fill();
-                        
-                        // Feedback message text with scaling
-                        ctx.translate(centerX, centerY);
-                        ctx.scale(scale, scale);
-                        
-                        // Draw the message text
-                        ctx.fillStyle = this.feedbackColor;
-                        ctx.font = 'bold 22px Arial';
-                        ctx.textAlign = 'center';
-                        ctx.textBaseline = 'middle';
-                        ctx.fillText(this.feedbackMessage, 0, 0);
-                        
-                        ctx.restore();
-                    }
+                    ctx.fillStyle = this.feedbackColor;
+                    ctx.fillText(this.feedbackMessage, this.x + this.width/2, feedbackY);
                 }
+
+                ctx.restore();
             }
         },
         {
-            // Helper function to wrap text
-            key: "wrapText",
-            value: function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
-                var words = text.split(' ');
-                var line = '';
-                ctx.textAlign = 'center';
-                for(var n = 0; n < words.length; n++){
-                    var testLine = line + words[n] + ' ';
-                    var metrics = ctx.measureText(testLine);
-                    var testWidth = metrics.width;
-                    if (testWidth > maxWidth && n > 0) {
-                        ctx.fillText(line, x, y);
-                        line = words[n] + ' ';
-                        y += lineHeight;
-                    } else {
-                        line = testLine;
-                    }
-                }
-                ctx.fillText(line, x, y);
+            // Helper function to draw pixelated border
+            key: "drawPixelBorder",
+            value: function drawPixelBorder(ctx, x, y, width, height, color) {
+                ctx.fillStyle = color;
+                // Top border
+                ctx.fillRect(x + 2, y, width - 4, 2);
+                // Bottom border
+                ctx.fillRect(x + 2, y + height - 2, width - 4, 2);
+                // Left border
+                ctx.fillRect(x, y + 2, 2, height - 4);
+                // Right border
+                ctx.fillRect(x + width - 2, y + 2, 2, height - 4);
+                // Corners
+                ctx.fillRect(x + 1, y + 1, 2, 2);
+                ctx.fillRect(x + width - 3, y + 1, 2, 2);
+                ctx.fillRect(x + 1, y + height - 3, 2, 2);
+                ctx.fillRect(x + width - 3, y + height - 3, 2, 2);
+            }
+        },
+        {
+            // Helper function to render button
+            key: "renderButton",
+            value: function renderButton(ctx, text, x, y, width, height, index, time) {
+                // Button shadow
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                ctx.fillRect(x + 2, y + 2, width, height);
+
+                // Button background
+                const baseColor = this.buttonAnimations[index] > 0 ? '#3F3F3F' : '#2A2A2A';
+                ctx.fillStyle = baseColor;
+                ctx.fillRect(x, y, width, height);
+
+                // Pixel border
+                const borderColor = this.buttonAnimations[index] > 0 ? '#FF6B45' : '#4A4A4A';
+                this.drawPixelBorder(ctx, x, y, width, height, borderColor);
+
+                // Button text with pixel shadow
+                const textY = y + height/2;
+                const bounceOffset = this.buttonAnimations[index] * Math.sin(time * 8) * 1.5;
+                
+                // Text shadow
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                ctx.font = '16px "Press Start 2P", monospace';
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(text, x + 13, textY + 1 + bounceOffset);
+
+                // Main text
+                ctx.fillStyle = this.buttonAnimations[index] > 0 ? '#FFFFFF' : '#BBBBBB';
+                ctx.fillText(text, x + 12, textY + bounceOffset);
             }
         }
     ]);

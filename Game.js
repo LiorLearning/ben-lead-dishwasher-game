@@ -283,7 +283,7 @@ var Game = /*#__PURE__*/ function() {
                                     strings: 0,
                                     flint: 0,
                                     feather: 0,
-                                    goldNuggets: 36
+                                    goldNuggets: 0
                                 };
                                 _this.world = new World(_this.assetLoader);
                                 _this.player = new Player(100, GROUND_LEVEL);
@@ -489,29 +489,33 @@ var Game = /*#__PURE__*/ function() {
         {
             key: "tryCollectResource",
             value: function tryCollectResource() {
-                var _this = this;
-                var collectedItem = this.world.checkCollision(this.player);
+                const collectedItem = this.world.checkCollision(this.player);
                 if (!collectedItem) return this.tryMining();
-                var type = collectedItem.type, x = collectedItem.x, y = collectedItem.y;
-                var amount = type === 'gold block' ? 6 : 5;
-                var resourceType = type === 'gold block' ? 'goldNuggets' : type;
+
+                const { type, x, y } = collectedItem;
+                const amount = type === 'gold nugget' ? 6 : 5;
+                const resourceType = type === 'gold nugget' ? 'goldNuggets' : type;
+                
                 this.resources[resourceType] = (this.resources[resourceType] || 0) + amount;
                 this.world.removeItem(collectedItem);
                 this.craftingPanel.updateResources(this.resources);
                 this.craftingPanel.highlightResource(resourceType);
+                
                 // Effects
-                var displayType = type === 'gold block' ? 'gold nuggets' : type;
-                this.floatingTexts.push(new FloatingText("+".concat(amount, " ").concat(displayType), x, y));
+                const displayType = type === 'gold nugget' ? 'gold nuggets' : type;
+                this.floatingTexts.push(new FloatingText(`+${amount} ${displayType}`, x, y));
                 this.audioManager.play('collect', 0.7 * (0.9 + Math.random() * 0.2));
+                
                 // Update zombie speeds if gold was collected
                 if (resourceType === 'goldNuggets') {
-                    this.world.zombies.forEach(function(zombie) {
-                        zombie.updateSpeed(_this.resources.goldNuggets || 0);
+                    this.world.zombies.forEach(zombie => {
+                        zombie.updateSpeed(this.resources.goldNuggets || 0);
                     });
                 }
+                
                 // Victory check
-                // Victory checks
-                if (!this.bowCrafted && this.resources.sticks >= 10 && this.resources.strings >= 5 && this.resources.flint >= 5 && this.resources.feather >= 5) {
+                if (!this.bowCrafted && this.resources.sticks >= 10 && this.resources.strings >= 5 && 
+                    this.resources.flint >= 5 && this.resources.feather >= 5) {
                     this.bowCrafted = true;
                     this.gameState = GAME_STATE.VICTORY;
                     this.victoryScreen.show();

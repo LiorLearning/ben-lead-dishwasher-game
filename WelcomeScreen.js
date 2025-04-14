@@ -1,269 +1,208 @@
-function _class_call_check(instance, Constructor) {
-    if (!(instance instanceof Constructor)) {
-        throw new TypeError("Cannot call a class as a function");
-    }
-}
-function _defineProperties(target, props) {
-    for(var i = 0; i < props.length; i++){
-        var descriptor = props[i];
-        descriptor.enumerable = descriptor.enumerable || false;
-        descriptor.configurable = true;
-        if ("value" in descriptor) descriptor.writable = true;
-        Object.defineProperty(target, descriptor.key, descriptor);
-    }
-}
-function _create_class(Constructor, protoProps, staticProps) {
-    if (protoProps) _defineProperties(Constructor.prototype, protoProps);
-    if (staticProps) _defineProperties(Constructor, staticProps);
-    return Constructor;
-}
 import { CANVAS_WIDTH, CANVAS_HEIGHT, GAME_STATE } from './constants.js';
-var WelcomeScreen = /*#__PURE__*/ function() {
-    "use strict";
-    function WelcomeScreen(game, assetLoader) {
-        _class_call_check(this, WelcomeScreen);
-        this.assetLoader = assetLoader;
+
+class WelcomeScreen {
+    constructor(game, assetLoader) {
         this.game = game;
-        this.title = "CRAFT & SURVIVE: DAVE'S ESCAPE";
-        this.subtitle = "LEVEL 1";
-        // Start button properties
+        this.assetLoader = assetLoader;
+        
+        // Button properties with pixel-art styling
         this.startButton = {
             x: CANVAS_WIDTH / 2 - 100,
-            y: CANVAS_HEIGHT / 2 + 80,
+            y: CANVAS_HEIGHT / 2 + 20,
             width: 200,
-            height: 60,
+            height: 40,
             text: "START GAME",
             hovered: false
         };
+
+        this.creditsButton = {
+            x: CANVAS_WIDTH / 2 - 100,
+            y: CANVAS_HEIGHT / 2 + 80,
+            width: 200,
+            height: 40,
+            text: "CREDITS: SANDRO",
+            hovered: false
+        };
+
         this.setupListeners();
-        this.isMobile = this.detectMobile();
     }
-    _create_class(WelcomeScreen, [
-        {
-            key: "detectMobile",
-            value: function detectMobile() {
-                return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 800;
-            }
-        },
-        {
-            key: "setupListeners",
-            value: function setupListeners() {
-                // Mouse events for button hover and click
-                this.game.canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
-                this.game.canvas.addEventListener('click', this.handleClick.bind(this));
-                // Touch events for mobile
-                this.game.canvas.addEventListener('touchstart', this.handleTouch.bind(this));
-            }
-        },
-        {
-            key: "handleMouseMove",
-            value: function handleMouseMove(event) {
-                if (!this.game.isGameActive) {
-                    var rect = this.game.canvas.getBoundingClientRect();
-                    var mouseX = (event.clientX - rect.left) * (this.game.canvas.width / rect.width);
-                    var mouseY = (event.clientY - rect.top) * (this.game.canvas.height / rect.height);
-                    this.startButton.hovered = this.isPointInButton(mouseX, mouseY, this.startButton);
-                }
-            }
-        },
-        {
-            key: "handleClick",
-            value: function handleClick(event) {
-                if (!this.game.isGameActive) {
-                    var rect = this.game.canvas.getBoundingClientRect();
-                    var mouseX = (event.clientX - rect.left) * (this.game.canvas.width / rect.width);
-                    var mouseY = (event.clientY - rect.top) * (this.game.canvas.height / rect.height);
-                    if (this.isPointInButton(mouseX, mouseY, this.startButton)) {
-                        this.startGame();
-                    }
-                }
-            }
-        },
-        {
-            key: "handleTouch",
-            value: function handleTouch(event) {
-                if (!this.game.isGameActive) {
-                    event.preventDefault();
-                    var rect = this.game.canvas.getBoundingClientRect();
-                    var touch = event.touches[0];
-                    var touchX = (touch.clientX - rect.left) * (this.game.canvas.width / rect.width);
-                    var touchY = (touch.clientY - rect.top) * (this.game.canvas.height / rect.height);
-                    if (this.isPointInButton(touchX, touchY, this.startButton)) {
-                        this.startGame();
-                    }
-                }
-            }
-        },
-        {
-            key: "isPointInButton",
-            value: function isPointInButton(x, y, button) {
-                return x >= button.x && x <= button.x + button.width && y >= button.y && y <= button.y + button.height;
-            }
-        },
-        {
-            key: "startGame",
-            value: function startGame() {
-                this.game.gameState = GAME_STATE.PLAYING;
-                this.game.isGameActive = true;
-                // Remove event listeners specific to welcome screen to prevent memory leaks
-                this.game.canvas.removeEventListener('mousemove', this.handleMouseMove);
-                this.game.canvas.removeEventListener('click', this.handleClick);
-                this.game.canvas.removeEventListener('touchstart', this.handleTouch);
-            }
-        },
-        {
-            key: "render",
-            value: function render(ctx) {
-                if (this.game.isGameActive) return;
-                
-                // Background overlay with minecraft texture
-                const minecraftTexture = this.assetLoader.getAsset('minecraft');
-                if (minecraftTexture) {
-                    // Create a parallax effect by using two layers of the texture
-                    ctx.globalAlpha = 0.2;
-                    const pattern = ctx.createPattern(minecraftTexture, 'repeat');
-                    ctx.fillStyle = pattern;
-                    
-                    // Slightly offset second layer for parallax effect
-                    const time = Date.now() / 10000; // Very slow movement
-                    const offsetX = Math.sin(time) * 5;
-                    const offsetY = Math.cos(time) * 5;
-                    
-                    ctx.save();
-                    ctx.translate(offsetX, offsetY);
-                    ctx.fillRect(-offsetX, -offsetY, CANVAS_WIDTH + offsetX*2, CANVAS_HEIGHT + offsetY*2);
-                    ctx.restore();
-                    
-                    // Reset alpha
-                    ctx.globalAlpha = 1.0;
-                    
-                    // Gradient overlay for depth
-                    const gradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
-                    gradient.addColorStop(0, 'rgba(15, 15, 50, 0.85)');
-                    gradient.addColorStop(0.5, 'rgba(25, 25, 70, 0.8)');
-                    gradient.addColorStop(1, 'rgba(15, 15, 40, 0.9)');
-                    ctx.fillStyle = gradient;
-                    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-                } else {
-                    // Fallback if texture isn't loaded
-                    const gradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
-                    gradient.addColorStop(0, 'rgba(25, 25, 60, 0.9)');
-                    gradient.addColorStop(1, 'rgba(20, 20, 40, 0.95)');
-                    ctx.fillStyle = gradient;
-                    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-                }
-                
-                // Draw enhanced pixelated border (Minecraft-style)
-                const borderWidth = 20;
-                
-                // Create a wood-like color gradient
-                const woodGradient = ctx.createLinearGradient(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-                woodGradient.addColorStop(0, '#8B4513'); // Standard wood
-                woodGradient.addColorStop(0.3, '#A0522D'); // Lighter wood
-                woodGradient.addColorStop(0.6, '#8B4513'); // Back to standard
-                woodGradient.addColorStop(1, '#6B3E26'); // Darker wood
-                ctx.fillStyle = woodGradient;
-                
-                // Top border with enhanced pixel effect
-                for (let x = 0; x < CANVAS_WIDTH; x += borderWidth) {
-                    const height = borderWidth + Math.floor(Math.random() * 15) - 7;
-                    const width = borderWidth + Math.floor(Math.random() * 10) - 5;
-                    // Add some randomness to color
-                    const colorVariation = Math.random() * 20 - 10;
-                    ctx.fillStyle = `rgb(${139 + colorVariation}, ${69 + colorVariation}, ${19 + colorVariation})`;
-                    ctx.fillRect(x, 0, width, height);
-                }
-                
-                // Bottom border with enhanced pixel effect
-                for (let x = 0; x < CANVAS_WIDTH; x += borderWidth) {
-                    const height = borderWidth + Math.floor(Math.random() * 15) - 7;
-                    const width = borderWidth + Math.floor(Math.random() * 10) - 5;
-                    const colorVariation = Math.random() * 20 - 10;
-                    ctx.fillStyle = `rgb(${139 + colorVariation}, ${69 + colorVariation}, ${19 + colorVariation})`;
-                    ctx.fillRect(x, CANVAS_HEIGHT - height, width, height);
-                }
-                
-                // Left border with enhanced pixel effect
-                for (let y = 0; y < CANVAS_HEIGHT; y += borderWidth) {
-                    const width = borderWidth + Math.floor(Math.random() * 15) - 7;
-                    const height = borderWidth + Math.floor(Math.random() * 10) - 5;
-                    const colorVariation = Math.random() * 20 - 10;
-                    ctx.fillStyle = `rgb(${139 + colorVariation}, ${69 + colorVariation}, ${19 + colorVariation})`;
-                    ctx.fillRect(0, y, width, height);
-                }
-                
-                // Right border with enhanced pixel effect
-                for (let y = 0; y < CANVAS_HEIGHT; y += borderWidth) {
-                    const width = borderWidth + Math.floor(Math.random() * 15) - 7;
-                    const height = borderWidth + Math.floor(Math.random() * 10) - 5;
-                    const colorVariation = Math.random() * 20 - 10;
-                    ctx.fillStyle = `rgb(${139 + colorVariation}, ${69 + colorVariation}, ${19 + colorVariation})`;
-                    ctx.fillRect(CANVAS_WIDTH - width, y, width, height);
-                }
-                
-                // Title
-                ctx.fillStyle = '#FFFFFF';
-                ctx.font = '48px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(this.title, CANVAS_WIDTH / 2, 100);
-                
-                // Subtitle
-                ctx.fillStyle = '#EEEEEE';
-                ctx.font = '24px Arial';
-                ctx.fillText(this.subtitle, CANVAS_WIDTH / 2, 140);
-                
-                // Instructions box
-                var boxWidth = 500;
-                var boxHeight = 220;
-                var boxX = CANVAS_WIDTH / 2 - boxWidth / 2;
-                var boxY = 170;
-                
-                // Box background
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-                ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
-                
-                // Box border
-                ctx.strokeStyle = '#8B4513';
-                ctx.lineWidth = 4;
-                ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
-                
-                // Instructions text
-                ctx.fillStyle = '#FFFFFF';
-                ctx.font = '20px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('Welcome to Bow Builder Quest!', CANVAS_WIDTH / 2, boxY + 40);
-                ctx.font = '16px Arial';
-                var instructions = [
-                    'Help Dave escape the zombie-infested forest:',
-                    '• Jump on platforms and answer quiz questions',
-                    '• Each correct answer gives you crafting materials',
-                    '• Collect 10 Sticks, 5 Strings, 5 Flint, and 5 Feathers',
-                    '• Watch out for zombies! You can jump over them',
-                    '• Craft your bow to defeat zombies and escape',
-                    '• Use arrow keys (or WASD) to move and SPACE to jump'
-                ];
-                instructions.forEach(function(line, index) {
-                    ctx.fillText(line, CANVAS_WIDTH / 2, boxY + 80 + index * 25);
-                });
-                
-                // Start button
-                ctx.fillStyle = this.startButton.hovered ? '#5D9CEC' : '#4A89DC';
-                ctx.fillRect(this.startButton.x, this.startButton.y, this.startButton.width, this.startButton.height);
-                
-                // Button border
-                ctx.strokeStyle = '#FFFFFF';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(this.startButton.x, this.startButton.y, this.startButton.width, this.startButton.height);
-                
-                // Button text
-                ctx.fillStyle = '#FFFFFF';
-                ctx.font = '24px Arial';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(this.startButton.text, this.startButton.x + this.startButton.width / 2, this.startButton.y + this.startButton.height / 2);
-            }
+
+    setupListeners() {
+        this.mouseMoveHandler = this.handleMouseMove.bind(this);
+        this.clickHandler = this.handleClick.bind(this);
+        this.touchHandler = this.handleTouch.bind(this);
+        
+        this.game.canvas.addEventListener('mousemove', this.mouseMoveHandler);
+        this.game.canvas.addEventListener('click', this.clickHandler);
+        this.game.canvas.addEventListener('touchstart', this.touchHandler);
+    }
+
+    removeListeners() {
+        this.game.canvas.removeEventListener('mousemove', this.mouseMoveHandler);
+        this.game.canvas.removeEventListener('click', this.clickHandler);
+        this.game.canvas.removeEventListener('touchstart', this.touchHandler);
+    }
+
+    handleMouseMove(event) {
+        const rect = this.game.canvas.getBoundingClientRect();
+        const mouseX = (event.clientX - rect.left) * (this.game.canvas.width / rect.width);
+        const mouseY = (event.clientY - rect.top) * (this.game.canvas.height / rect.height);
+
+        this.startButton.hovered = this.isPointInButton(mouseX, mouseY, this.startButton);
+        this.creditsButton.hovered = this.isPointInButton(mouseX, mouseY, this.creditsButton);
+    }
+
+    handleClick(event) {
+        const rect = this.game.canvas.getBoundingClientRect();
+        const mouseX = (event.clientX - rect.left) * (this.game.canvas.width / rect.width);
+        const mouseY = (event.clientY - rect.top) * (this.game.canvas.height / rect.height);
+
+        if (this.isPointInButton(mouseX, mouseY, this.startButton)) {
+            this.game.gameState = GAME_STATE.PLAYING;
+            this.game.audioManager.play('collect', 1.0);
         }
-    ]);
-    return WelcomeScreen;
-}();
+    }
+
+    handleTouch(event) {
+        event.preventDefault();
+        const rect = this.game.canvas.getBoundingClientRect();
+        const touch = event.touches[0];
+        const touchX = (touch.clientX - rect.left) * (this.game.canvas.width / rect.width);
+        const touchY = (touch.clientY - rect.top) * (this.game.canvas.height / rect.height);
+
+        if (this.isPointInButton(touchX, touchY, this.startButton)) {
+            this.game.gameState = GAME_STATE.PLAYING;
+            this.game.audioManager.play('collect', 1.0);
+        }
+    }
+
+    isPointInButton(x, y, button) {
+        return x >= button.x && x <= button.x + button.width &&
+               y >= button.y && y <= button.y + button.height;
+    }
+
+    render(ctx) {
+        // Dark Nether background with gradient
+        const gradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
+        gradient.addColorStop(0, '#1a0f0f');
+        gradient.addColorStop(1, '#2d1212');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+        // Add subtle basalt texture pattern
+        this.renderBasaltTexture(ctx);
+        
+        // Render floating embers
+        this.renderEmbers(ctx);
+
+        // Title with lava glow effect
+        const time = Date.now() / 1000;
+        ctx.save();
+        
+        // Glow effect
+        ctx.shadowColor = '#ff4400';
+        ctx.shadowBlur = 20 + Math.sin(time * 2) * 5;
+        ctx.fillStyle = '#ff6622';
+        ctx.font = 'bold 64px "Press Start 2P", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('PIGLIN PANIC', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 3);
+
+        // Subtitle
+        ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
+        ctx.shadowBlur = 10;
+        ctx.fillStyle = '#cccccc';
+        ctx.font = '24px "Press Start 2P", monospace';
+        ctx.fillText('Craft fast or burn slow', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 3 + 50);
+
+        ctx.restore();
+
+        // Render buttons
+        this.renderPixelButton(ctx, this.startButton);
+        this.renderPixelButton(ctx, this.creditsButton);
+
+        // Bottom right text
+        ctx.fillStyle = '#666666';
+        ctx.font = '12px "Press Start 2P", monospace';
+        ctx.textAlign = 'right';
+        ctx.fillText('Made in the Fires of the Nether', CANVAS_WIDTH - 20, CANVAS_HEIGHT - 20);
+    }
+
+    renderPixelButton(ctx, button) {
+        ctx.save();
+
+        // Button background with pixel border
+        const gradient = ctx.createLinearGradient(button.x, button.y, button.x, button.y + button.height);
+        if (button.hovered) {
+            gradient.addColorStop(0, '#ff4400');
+            gradient.addColorStop(1, '#cc3300');
+            ctx.shadowColor = '#ff6622';
+            ctx.shadowBlur = 15;
+        } else {
+            gradient.addColorStop(0, '#441111');
+            gradient.addColorStop(1, '#330000');
+            ctx.shadowColor = '#ff4400';
+            ctx.shadowBlur = 5;
+        }
+
+        // Pixel-style border
+        ctx.fillStyle = gradient;
+        ctx.fillRect(button.x, button.y, button.width, button.height);
+        
+        // Pixel corners
+        ctx.fillStyle = button.hovered ? '#ff6622' : '#551111';
+        ctx.fillRect(button.x - 2, button.y - 2, 4, 4);
+        ctx.fillRect(button.x + button.width - 2, button.y - 2, 4, 4);
+        ctx.fillRect(button.x - 2, button.y + button.height - 2, 4, 4);
+        ctx.fillRect(button.x + button.width - 2, button.y + button.height - 2, 4, 4);
+
+        // Button text
+        ctx.fillStyle = button.hovered ? '#ffffff' : '#cccccc';
+        ctx.font = '16px "Press Start 2P", monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(button.text, button.x + button.width / 2, button.y + button.height / 2);
+
+        ctx.restore();
+    }
+
+    renderBasaltTexture(ctx) {
+        // Create subtle basalt texture pattern
+        for (let i = 0; i < 50; i++) {
+            const x = Math.random() * CANVAS_WIDTH;
+            const y = Math.random() * CANVAS_HEIGHT;
+            const size = 1 + Math.random() * 3;
+            
+            ctx.fillStyle = `rgba(40, 40, 40, ${Math.random() * 0.1})`;
+            ctx.fillRect(x, y, size, size * 2);
+        }
+    }
+
+    renderEmbers(ctx) {
+        const time = Date.now() / 1000;
+        
+        // Create floating embers
+        for (let i = 0; i < 20; i++) {
+            const x = (Math.sin(time * 0.5 + i) * 0.5 + 0.5) * CANVAS_WIDTH;
+            const y = ((Math.cos(time * 0.3 + i) * 0.5 + 0.5) * CANVAS_HEIGHT * 0.8) + 
+                     (Math.sin(time * 2 + i) * 5);
+            
+            // Ember glow
+            const gradient = ctx.createRadialGradient(x, y, 0, x, y, 10);
+            gradient.addColorStop(0, 'rgba(255, 100, 0, 0.2)');
+            gradient.addColorStop(1, 'rgba(255, 50, 0, 0)');
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(x, y, 10, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Ember core
+            ctx.fillStyle = '#ff6622';
+            ctx.beginPath();
+            ctx.arc(x, y, 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+}
+
 export { WelcomeScreen as default };

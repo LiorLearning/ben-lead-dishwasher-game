@@ -207,7 +207,8 @@ export var AssetLoader = /*#__PURE__*/ function() {
             'Platform_v2': 'https://play.rosebud.ai/assets/Platform_v2.png?dTgz',
             'piglin': 'https://play.rosebud.ai/assets/Piglin_BE.webp?cOvn',
             'lava pit': 'https://play.rosebud.ai/assets/lava pit.png?KI7k',
-            'steve minecraft with golden boots': 'https://rosebud.ai/assets/steve minecraft with golden boots.png?EWhA'
+            'steve minecraft with golden boots': 'https://rosebud.ai/assets/steve minecraft with golden boots.png?EWhA',
+            'gold nugget': 'https://rosebud.ai/assets/one gold nugget minecraft.png?qQYy'
         };
     }
     _create_class(AssetLoader, [
