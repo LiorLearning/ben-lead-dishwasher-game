@@ -644,6 +644,10 @@ var Game = /*#__PURE__*/ function() {
                         if (collidedZombie) {
                             this.handleZombieCollision();
                         }
+                        // Check for lava collision
+                        if (this.checkLavaCollision()) {
+                            this.handleLavaCollision();
+                        }
                     }
 
                     // Update piglins
