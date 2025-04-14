@@ -712,8 +712,6 @@ var Game = /*#__PURE__*/ function() {
                     this.ctx.fillStyle = gradient;
                     this.ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
                 }
-                // Draw lava rivers with glow effect
-                this._drawLavaRivers();
                 // Draw netherrack ground with cracks and glow
                 this.ctx.fillStyle = this._groundColor;
                 this.ctx.fillRect(0, GROUND_LEVEL + 30, CANVAS_WIDTH, CANVAS_HEIGHT - GROUND_LEVEL - 30);
@@ -1003,47 +1001,6 @@ var Game = /*#__PURE__*/ function() {
             }
         },
         {
-            key: "_drawLavaRivers",
-            value: function _drawLavaRivers() {
-                // Draw animated lava rivers (fixed in world space)
-                // There are three lava rivers in the game:
-                // 1. From x=0 to x=200
-                // 2. From x=300 to x=450
-                // 3. From x=500 to x=680
-                // All rivers are at GROUND_LEVEL + 20 with height 10
-                
-                var time = Date.now() * 0.001; // Get time in seconds
-                // River 1 (from x=0 to x=200)
-                this._drawAnimatedLavaSection(0, GROUND_LEVEL + 20, 200, 10, time);
-                // River 2 (from x=300 to x=450)
-                this._drawAnimatedLavaSection(300, GROUND_LEVEL + 20, 150, 10, time);
-                // River 3 (from x=500 to x=680)
-                this._drawAnimatedLavaSection(500, GROUND_LEVEL + 20, 180, 10, time);
-                // Add glow effect (fixed in world space)
-                var gradient = this.ctx.createLinearGradient(0, 0, 0, GROUND_LEVEL + 30);
-                // Enhanced glow gradient with smoother transition
-                gradient.addColorStop(0, this._glowColor);
-                gradient.addColorStop(0.7, 'rgba(255, 120, 50, 0.2)');
-                gradient.addColorStop(1, 'transparent');
-                // Apply glow with multiple passes for depth
-                this.ctx.save();
-                this.ctx.globalCompositeOperation = 'lighter';
-                this.ctx.fillStyle = gradient;
-                this.ctx.fillRect(-this.cameraOffset, 0, CANVAS_WIDTH, GROUND_LEVEL + 30);
-                // Add subtle glow lines for lava cracks
-                this.ctx.strokeStyle = 'rgba(255, 80, 30, 0.3)';
-                this.ctx.lineWidth = 2;
-                for(var i = 0; i < 5; i++){
-                    var x = -this.cameraOffset + Math.random() * CANVAS_WIDTH;
-                    this.ctx.beginPath();
-                    this.ctx.moveTo(x, GROUND_LEVEL + 25);
-                    this.ctx.lineTo(x + (Math.random() - 0.5) * 30, 0);
-                    this.ctx.stroke();
-                }
-                this.ctx.restore();
-            }
-        },
-        {
             key: "_drawAnimatedLavaSection",
             value: function _drawAnimatedLavaSection(x, y, width, height, time) {
                 // Save current transform
@@ -1316,11 +1273,7 @@ var Game = /*#__PURE__*/ function() {
             key: "checkLavaCollision",
             value: function checkLavaCollision() {
                 // Lava rivers data - each entry defines a river's position and size
-                const lavaRivers = [
-                    { start: 0, end: 200 },    // River 1: from x=0 to x=200
-                    { start: 300, end: 450 },  // River 2: from x=300 to x=450
-                    { start: 500, end: 680 }   // River 3: from x=500 to x=680
-                ];
+                const lavaRivers = [];
                 
                 // All rivers are at GROUND_LEVEL + 20 with height 10
                 const lavaY = GROUND_LEVEL + 20;
