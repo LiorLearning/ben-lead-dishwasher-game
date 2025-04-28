@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medieval Rooftop Game</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+        }
+        canvas {
+            display: block;
+        }
+        #gameUI {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        #gameMessage {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+            text-align: center;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameUI">
+        <div id="playerHealth">Player Health: 100/100</div>
+        <div id="enemyHealth">Enemy Health: 100/100</div>
+        <div id="orbCounter">Orbs: 0</div>
+        <div id="specialAttack">Special Attack: 0%</div>
+        <div id="fireballAmmo">Fireballs: 6/6</div>
+    </div>
+    <div id="gameMessage"></div>
+
+    <!-- Three.js -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    
+    <!-- Game Scripts -->
+    <script src="js/assets-loader.js"></script>
+    <script src="js/scene-setup.js"></script>
+    <script src="js/ui-manager.js"></script>
+    <script src="js/collectible-manager.js"></script>
+    <script src="js/attack-effects.js"></script>
+    <script src="js/character-controller.js"></script>
+    <script src="js/main-script.js"></script>
+</body>
+</html> 
