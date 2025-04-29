@@ -38,13 +38,18 @@ class AssetsLoader {
             return null;
         }
 
+        const texture = this.assets.textures[textureName];
+        // Calculate height based on original image aspect ratio
+        const imageAspect = texture.image.width / texture.image.height;
+        const calculatedHeight = width / imageAspect;
+
         const spriteMaterial = new THREE.SpriteMaterial({ 
-            map: this.assets.textures[textureName],
+            map: texture,
             transparent: true
         });
 
         const sprite = new THREE.Sprite(spriteMaterial);
-        sprite.scale.set(width, height, 1);
+        sprite.scale.set(width, calculatedHeight, 1);
         
         this.assets.sprites[name] = sprite;
         return sprite;

@@ -9,11 +9,16 @@ class Game {
             this.characterController = null;
             this.collectibleManager = null;
             this.uiManager = new UIManager();
+            this.inputManager = new InputManager();
+            this.quizManager = new QuizManager();
             
             // Game state
             this.lastTime = 0;
             this.isGameRunning = false;
             this.isLoading = true;
+            
+            // Make game instance globally accessible
+            window.game = this;
             
             // Start the game initialization
             this.init();
@@ -66,25 +71,25 @@ class Game {
             this.characterController = new CharacterController(this.sceneSetup, this.assetsLoader);
             
             // Create the player character (tiger) - positioned more to the left
-            const player = this.characterController.createPlayerCharacter(-6, -2);
+            const player = this.characterController.createPlayerCharacter(-6, -3);
             if (!player) {
                 throw new Error('Failed to create player character');
             }
+            player.sprite.position.z = 0; // Ensure player is in front
             
             // Create the enemy character (dishwasher) - positioned at the far right
             const enemy = this.characterController.createEnemyCharacter(8, -2);
             if (!enemy) {
                 throw new Error('Failed to create enemy character');
             }
+            enemy.sprite.position.z = 0; // Ensure enemy is in front
             
             // Set up collectible manager
             this.collectibleManager = new CollectibleManager(this.sceneSetup, this.assetsLoader);
             
             // Initialize UI elements
-            this.uiManager.updatePlayerHealth(player.health, player.maxHealth);
-            this.uiManager.updateEnemyHealth(enemy.health, enemy.maxHealth);
-            this.uiManager.updateOrbCounter(0);
-            this.uiManager.updateSpecialAttack(0);
+            this.uiManager.updateTigerHealth(player.health, player.maxHealth);
+            this.uiManager.updateDishwasherHealth(enemy.health, enemy.maxHealth);
             
         } catch (error) {
             console.error('Error setting up game world:', error);
@@ -115,16 +120,52 @@ class Game {
                 const enemy = this.characterController.characters.enemy;
                 
                 if (player) {
-                    this.uiManager.updatePlayerHealth(player.health, player.maxHealth);
+                    this.uiManager.updateTigerHealth(player.health, player.maxHealth);
+                    
+                    // Check for defeat condition
+                    if (player.health <= 0) {
+                        console.log('Defeat condition met - Player health:', player.health);
+                        this.isGameRunning = false;
+                        this.uiManager.showDefeat();
+                        return;
+                    }
                 }
                 
                 if (enemy) {
-                    this.uiManager.updateEnemyHealth(enemy.health, enemy.maxHealth);
+                    this.uiManager.updateDishwasherHealth(enemy.health, enemy.maxHealth);
+                    
+                    // Check for victory condition
+                    if (enemy.health <= 0 && this.collectibleManager && this.collectibleManager.platesFilled) {
+                        console.log('Victory condition met - Enemy health:', enemy.health, 'Plates filled:', this.collectibleManager.platesFilled);
+                        this.isGameRunning = false;
+                        this.uiManager.showVictory();
+                        return;
+                    }
+                    
+                    // Check for dishwasher weakened condition
+                    if (enemy.health <= 0 && this.collectibleManager && this.collectibleManager.platesRemaining > 0) {
+                        console.log('Dishwasher weakened condition met - Enemy health:', enemy.health, 'Plates remaining:', this.collectibleManager.platesRemaining);
+                        this.uiManager.showDishwasherWeakened();
+                    }
                 }
             }
             
             if (this.collectibleManager) {
                 this.collectibleManager.update(delta, this.characterController.characters.player);
+                
+                // Debug collectible manager state
+                console.log('Collectible Manager State:', {
+                    platesFilled: this.collectibleManager.platesFilled,
+                    platesRemaining: this.collectibleManager.platesRemaining,
+                    platesCollected: this.collectibleManager.platesCollected
+                });
+                
+                // Check for plates loaded condition
+                if (this.collectibleManager.platesFilled && 
+                    this.characterController.characters.enemy.health > 0) {
+                    console.log('Plates loaded condition met - Plates filled:', this.collectibleManager.platesFilled, 'Enemy health:', this.characterController.characters.enemy.health);
+                    this.uiManager.showPlatesLoaded();
+                }
             }
             
             // Render the scene
@@ -146,7 +187,7 @@ class Game {
             const player = this.characterController.characters.player;
             if (player) {
                 player.takeDamage(amount);
-                this.uiManager.updatePlayerHealth(player.health, player.maxHealth);
+                this.uiManager.updateTigerHealth(player.health, player.maxHealth);
             }
         } catch (error) {
             console.error('Error applying damage to player:', error);
@@ -158,7 +199,7 @@ class Game {
             const enemy = this.characterController.characters.enemy;
             if (enemy) {
                 enemy.takeDamage(amount);
-                this.uiManager.updateEnemyHealth(enemy.health, enemy.maxHealth);
+                this.uiManager.updateDishwasherHealth(enemy.health, enemy.maxHealth);
                 // Show player attack effect
                 this.characterController.performPlayerAttack();
                 // Show damage effect on enemy
@@ -178,7 +219,7 @@ class Game {
                 const enemy = this.characterController.characters.enemy;
                 if (enemy) {
                     enemy.takeDamage(50);
-                    this.uiManager.updateEnemyHealth(enemy.health, enemy.maxHealth);
+                    this.uiManager.updateDishwasherHealth(enemy.health, enemy.maxHealth);
                     this.uiManager.resetSpecialAttack();
                     return true;
                 }
@@ -219,6 +260,16 @@ class Game {
             this.sceneSetup.renderer.dispose();
         }
     }
+    
+    freezeGameLoop() {
+        this.isGameRunning = false;
+    }
+    
+    unfreezeGameLoop() {
+        this.isGameRunning = true;
+        this.lastTime = performance.now();
+        requestAnimationFrame(this.gameLoop.bind(this));
+    }
 }
 
 // Initialize the game when the page is loaded
@@ -246,10 +297,8 @@ window.addEventListener('load', () => {
         });
         
         console.log('Game loaded and running!');
-        
     } catch (error) {
         console.error('Error starting game:', error);
-        alert('Failed to start game. Please refresh the page.');
     }
 });
 

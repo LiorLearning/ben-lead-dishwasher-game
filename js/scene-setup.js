@@ -11,16 +11,30 @@ class SceneSetup {
         // Array to store all elevated platforms
         this.elevatedPlatforms = [];
         
-        // Moving platform properties
-        this.movingPlatform = null;
-        this.platformSpeed = 6; // Increased from 4 to 6 units per second
+        // Multiple moving platforms properties
+        this.movingPlatforms = [];
+        this.platformSpeed = 6;
         this.platformSpawnTimer = 0;
-        this.platformSpawnInterval = 5; // seconds
+        this.platformSpawnInterval = 5;
+        this.platformHeights = [-1, 1, 2]; // Different vertical positions for platforms
 
         // Background scrolling properties
-        this.backgroundSpeed = 5; // Increased from 4 to 5 units per second
-        this.backgroundWidth = 20; // Width of one background segment
+        this.backgroundSpeed = 5;
+        this.backgroundWidth = 20;
         this.backgroundSegments = [];
+
+        // Screen shake properties
+        this.isScreenShaking = false;
+        this.screenShakeDuration = 0.3; // Duration of screen shake in seconds
+        this.screenShakeElapsed = 0;
+        this.screenShakeIntensity = 0.2; // Intensity of screen shake
+        this.originalCameraPosition = new THREE.Vector3();
+
+        // Red outline effect properties
+        this.isRedOutlineActive = false;
+        this.redOutlineDuration = 0.5; // Duration of red outline effect
+        this.redOutlineElapsed = 0;
+        this.setupPostProcessing();
     }
 
     setupCamera() {
@@ -84,7 +98,7 @@ class SceneSetup {
                 });
                 
                 const background = new THREE.Mesh(bgGeometry, bgMaterial);
-                background.position.set(i * this.backgroundWidth, 0, -10);
+                background.position.set(i * this.backgroundWidth, 0, -1); // Position background behind shadows
                 this.scene.add(background);
                 this.backgroundSegments.push(background);
             }
@@ -181,93 +195,206 @@ class SceneSetup {
         });
     }
 
-    createMovingPlatform() {
-        // Create a stone-like platform using a box geometry
-        const platformWidth = 3;
-        const platformHeight = 0.5;
-        const platformDepth = 1;
-        
-        // Create the main platform geometry
-        const platformGeometry = new THREE.BoxGeometry(platformWidth, platformHeight, platformDepth);
-        
-        // Create a stone-like material
-        const platformMaterial = new THREE.MeshPhongMaterial({
-            color: 0x888888,
-            shininess: 30,
-            specular: 0x111111,
-            flatShading: true
+    createMovingPlatform(height) {
+        // Load the stone-tower-top texture first to get its dimensions
+        const textureLoader = new THREE.TextureLoader();
+        const texture = textureLoader.load('assets/stone-tower-top.png', (texture) => {
+            // Calculate aspect ratio of the image
+            const imageAspect = texture.image.width / texture.image.height;
+            
+            // Set desired collision dimensions (1.5x smaller)
+            const collisionWidth = 3; // Original width
+            const collisionHeight = 0.5; // Original height
+            
+            // Calculate visual dimensions that maintain aspect ratio
+            const visualWidth = collisionWidth;
+            const visualHeight = visualWidth / imageAspect;
+            
+            // Create the platform geometry with visual dimensions
+            const platformGeometry = new THREE.PlaneGeometry(visualWidth, visualHeight);
+            
+            // Create the material
+            const platformMaterial = new THREE.MeshBasicMaterial({
+                map: texture,
+                transparent: true,
+                alphaTest: 0.5,
+                depthWrite: false
+            });
+            
+            // Create the platform mesh
+            const platform = new THREE.Mesh(platformGeometry, platformMaterial);
+            platform.position.set(10, height, -1); // Use provided height
+            
+            this.scene.add(platform);
+            this.movingPlatforms.push(platform);
+            
+            // Store platform information for collision detection
+            this.elevatedPlatforms.push({
+                x: platform.position.x,
+                y: platform.position.y,
+                width: collisionWidth,
+                height: collisionHeight
+            });
+            
+            console.log('Created new moving platform at height:', height);
         });
-        
-        // Create the platform mesh
-        const platform = new THREE.Mesh(platformGeometry, platformMaterial);
-        platform.position.set(10, 0, 0); // Start from right side
-        
-        // Add some stone-like details
-        const detailGeometry = new THREE.BoxGeometry(platformWidth * 0.1, platformHeight * 0.8, platformDepth * 0.8);
-        const detailMaterial = new THREE.MeshPhongMaterial({
-            color: 0x666666,
-            shininess: 20,
-            specular: 0x111111,
-            flatShading: true
-        });
-        
-        // Add some random stone details
-        for (let i = 0; i < 3; i++) {
-            const detail = new THREE.Mesh(detailGeometry, detailMaterial);
-            const offsetX = (Math.random() - 0.5) * platformWidth * 0.6;
-            const offsetY = -platformHeight * 0.1;
-            detail.position.set(offsetX, offsetY, 0);
-            platform.add(detail);
-        }
-        
-        this.scene.add(platform);
-        this.movingPlatform = platform;
-        
-        // Store platform information for collision detection
-        this.elevatedPlatforms.push({
-            x: platform.position.x,
-            y: platform.position.y,
-            width: platformWidth,
-            height: platformHeight
-        });
-        
-        console.log('Created new moving platform. Total platforms:', this.elevatedPlatforms.length);
     }
 
     updateMovingPlatform(delta) {
-        if (this.movingPlatform) {
-            // Move platform from right to left at slightly faster speed than background
-            this.movingPlatform.position.x -= (this.backgroundSpeed + 1) * delta;
+        // Update all moving platforms
+        for (let i = this.movingPlatforms.length - 1; i >= 0; i--) {
+            const platform = this.movingPlatforms[i];
+            
+            // Move platform from right to left
+            platform.position.x -= (this.backgroundSpeed + 1) * delta;
             
             // Update platform collision data
-            const platformIndex = this.elevatedPlatforms.length - 1;
+            const platformIndex = this.elevatedPlatforms.length - this.movingPlatforms.length + i;
             if (platformIndex >= 0) {
-                this.elevatedPlatforms[platformIndex].x = this.movingPlatform.position.x;
+                this.elevatedPlatforms[platformIndex].x = platform.position.x;
             }
             
             // Remove platform when it goes off screen
-            if (this.movingPlatform.position.x < -10) {
-                this.scene.remove(this.movingPlatform);
-                this.movingPlatform = null;
-                this.elevatedPlatforms.pop();
+            if (platform.position.x < -10) {
+                this.scene.remove(platform);
+                this.movingPlatforms.splice(i, 1);
+                this.elevatedPlatforms.splice(platformIndex, 1);
                 
                 // Notify collectible manager that a platform was removed
                 if (window.game && window.game.collectibleManager) {
                     window.game.collectibleManager.platformRemoved();
                 }
             }
-        } else {
-            // Spawn new platform every 5 seconds
-            this.platformSpawnTimer += delta;
-            if (this.platformSpawnTimer >= this.platformSpawnInterval) {
-                this.createMovingPlatform();
-                this.platformSpawnTimer = 0;
+        }
+        
+        // Spawn new platforms
+        this.platformSpawnTimer += delta;
+        if (this.platformSpawnTimer >= this.platformSpawnInterval) {
+            // Randomly select a height from the available heights
+            const randomHeight = this.platformHeights[Math.floor(Math.random() * this.platformHeights.length)];
+            this.createMovingPlatform(randomHeight);
+            this.platformSpawnTimer = 0;
+        }
+    }
+
+    triggerScreenShake() {
+        if (!this.isScreenShaking) {
+            this.isScreenShaking = true;
+            this.screenShakeElapsed = 0;
+            this.originalCameraPosition.copy(this.camera.position);
+        }
+    }
+
+    updateScreenShake(delta) {
+        if (this.isScreenShaking) {
+            this.screenShakeElapsed += delta;
+            
+            if (this.screenShakeElapsed >= this.screenShakeDuration) {
+                // Reset camera position when shake is complete
+                this.camera.position.copy(this.originalCameraPosition);
+                this.isScreenShaking = false;
+            } else {
+                // Calculate shake progress (0 to 1)
+                const progress = this.screenShakeElapsed / this.screenShakeDuration;
+                // Ease-out effect (1 - progress^2)
+                const intensity = this.screenShakeIntensity * (1 - progress * progress);
+                
+                // Random offset for shake effect
+                const offsetX = (Math.random() - 0.5) * intensity;
+                const offsetY = (Math.random() - 0.5) * intensity;
+                
+                // Apply shake offset to camera
+                this.camera.position.x = this.originalCameraPosition.x + offsetX;
+                this.camera.position.y = this.originalCameraPosition.y + offsetY;
+            }
+        }
+    }
+
+    setupPostProcessing() {
+        // Create effect composer
+        this.composer = new THREE.EffectComposer(this.renderer);
+        
+        // Add render pass
+        const renderPass = new THREE.RenderPass(this.scene, this.camera);
+        this.composer.addPass(renderPass);
+        
+        // Create red outline shader
+        const redOutlineShader = {
+            uniforms: {
+                tDiffuse: { value: null },
+                time: { value: 0 },
+                intensity: { value: 0 }
+            },
+            vertexShader: `
+                varying vec2 vUv;
+                void main() {
+                    vUv = uv;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform sampler2D tDiffuse;
+                uniform float time;
+                uniform float intensity;
+                varying vec2 vUv;
+                
+                void main() {
+                    vec4 color = texture2D(tDiffuse, vUv);
+                    
+                    // Calculate distance from center
+                    vec2 center = vec2(0.5, 0.5);
+                    float dist = length(vUv - center);
+                    
+                    // Create red outline effect
+                    float outline = smoothstep(0.4, 0.5, dist) * intensity;
+                    vec3 redTint = vec3(1.0, 0.0, 0.0);
+                    
+                    // Mix original color with red outline
+                    color.rgb = mix(color.rgb, redTint, outline);
+                    
+                    // Add slight pulsing effect
+                    float pulse = sin(time * 10.0) * 0.1 + 0.9;
+                    color.rgb *= pulse;
+                    
+                    gl_FragColor = color;
+                }
+            `
+        };
+        
+        // Add red outline pass
+        this.redOutlinePass = new THREE.ShaderPass(redOutlineShader);
+        this.redOutlinePass.renderToScreen = true;
+        this.composer.addPass(this.redOutlinePass);
+    }
+
+    triggerRedOutline() {
+        if (!this.isRedOutlineActive) {
+            this.isRedOutlineActive = true;
+            this.redOutlineElapsed = 0;
+        }
+    }
+
+    updateRedOutline(delta) {
+        if (this.isRedOutlineActive) {
+            this.redOutlineElapsed += delta;
+            
+            if (this.redOutlineElapsed >= this.redOutlineDuration) {
+                this.redOutlinePass.uniforms.intensity.value = 0;
+                this.isRedOutlineActive = false;
+            } else {
+                // Calculate intensity with ease-out effect
+                const progress = this.redOutlineElapsed / this.redOutlineDuration;
+                const intensity = 0.5 * (1 - progress * progress);
+                this.redOutlinePass.uniforms.intensity.value = intensity;
+                this.redOutlinePass.uniforms.time.value = this.redOutlineElapsed;
             }
         }
     }
 
     render() {
-        this.renderer.render(this.scene, this.camera);
+        this.updateScreenShake(1/60);
+        this.updateRedOutline(1/60);
+        this.composer.render();
     }
 
     isOnPlatform(x, y, width) {
@@ -296,6 +423,79 @@ class SceneSetup {
         
         // If not on any elevated platform, return the ground level
         return -3;
+    }
+
+    createPlatform(x, y, width, height, isMoving = false) {
+        const platform = {
+            position: new THREE.Vector2(x, y),
+            width: width,
+            height: height,
+            isMoving: isMoving,
+            direction: 1,
+            speed: 2,
+            mesh: null,
+            shadow: null
+        };
+
+        // Create platform mesh
+        const geometry = new THREE.PlaneGeometry(width, height);
+        const material = new THREE.MeshBasicMaterial({
+            color: 0x8B4513,
+            side: THREE.DoubleSide
+        });
+        platform.mesh = new THREE.Mesh(geometry, material);
+        platform.mesh.position.set(x, y, 0);
+        this.scene.add(platform.mesh);
+
+        // Create platform shadow
+        this.createPlatformShadow(platform);
+
+        this.platforms.push(platform);
+        return platform;
+    }
+
+    createPlatformShadow(platform) {
+        const shadowGeometry = new THREE.CircleGeometry(1.5, 32);
+        const shadowMaterial = new THREE.MeshBasicMaterial({
+            color: 0x000000,
+            transparent: true,
+            opacity: 0.4,
+            depthWrite: false
+        });
+        platform.shadow = new THREE.Mesh(shadowGeometry, shadowMaterial);
+        platform.shadow.position.set(platform.position.x, platform.position.y - 0.1, -0.5);
+        platform.shadow.rotation.x = -Math.PI / 2;
+        this.scene.add(platform.shadow);
+    }
+
+    updatePlatformShadow(platform) {
+        if (platform.shadow) {
+            platform.shadow.position.x = platform.position.x;
+            platform.shadow.position.y = platform.position.y - 0.1;
+        }
+    }
+
+    update(delta) {
+        // Update moving platforms
+        for (const platform of this.platforms) {
+            if (platform.isMoving) {
+                // ... existing platform movement code ...
+                
+                // Update platform shadow
+                this.updatePlatformShadow(platform);
+            }
+        }
+    }
+
+    cleanup() {
+        // ... existing cleanup code ...
+        
+        // Remove platform shadows
+        for (const platform of this.platforms) {
+            if (platform.shadow) {
+                this.scene.remove(platform.shadow);
+            }
+        }
     }
 }
 

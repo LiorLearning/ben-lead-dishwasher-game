@@ -54,10 +54,10 @@ class CollectibleManager {
         this.sceneSetup = sceneSetup;
         this.assetsLoader = assetsLoader;
         this.collectibles = [];
-        this.orbCount = 0;
         this.movingPlatformOrbs = new Set(); // Track orbs on moving platform
         this.platformCount = 0; // Track total number of platforms created
         this.lastPlatformCount = 0; // Track last known platform count
+        this.orbSize = 0.75; // Base size for fire orbs (1.5x the original 0.5)
     }
     
     platformRemoved() {
@@ -67,24 +67,84 @@ class CollectibleManager {
     }
     
     spawnOrb(x, y, isOnMovingPlatform = false) {
-        const orbSprite = this.assetsLoader.createSprite('orbSprite', 'fireOrb', 0.5, 0.5);
+        // Create the main orb sprite with increased size
+        const orbSprite = this.assetsLoader.createSprite('orbSprite', 'fireOrb', this.orbSize, this.orbSize);
         if (!orbSprite) {
             console.error('Failed to create fire orb sprite');
             return;
         }
         orbSprite.position.set(x, y, 0);
+        
+        // Create glow effect
+        const glowTexture = this.createGlowTexture();
+        const glowMaterial = new THREE.SpriteMaterial({
+            map: glowTexture,
+            color: 0xFFD700,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            opacity: 0.6
+        });
+        const glowSprite = new THREE.Sprite(glowMaterial);
+        glowSprite.scale.set(this.orbSize * 1.5, this.orbSize * 1.5, 1);
+        glowSprite.position.set(x, y, -0.1); // Slightly behind the orb
+        
+        // Add both sprites to the scene
         this.sceneSetup.scene.add(orbSprite);
+        this.sceneSetup.scene.add(glowSprite);
+        
+        // Create particle system
+        const particleCount = 10;
+        const particles = [];
+        for (let i = 0; i < particleCount; i++) {
+            const particleGeometry = new THREE.CircleGeometry(0.05, 8);
+            const particleMaterial = new THREE.MeshBasicMaterial({
+                color: 0xFFA500,
+                transparent: true,
+                opacity: 0.4,
+                blending: THREE.AdditiveBlending
+            });
+            const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+            particle.position.set(x, y, 0);
+            this.sceneSetup.scene.add(particle);
+            particles.push(particle);
+        }
         
         const collectible = {
             sprite: orbSprite,
+            glowSprite: glowSprite,
+            particles: particles,
             collected: false,
-            isOnMovingPlatform: isOnMovingPlatform
+            isOnMovingPlatform: isOnMovingPlatform,
+            initialY: y,
+            time: Math.random() * Math.PI * 2,
+            pulseTime: 0,
+            particleTime: 0
         };
         
         this.collectibles.push(collectible);
         if (isOnMovingPlatform) {
             this.movingPlatformOrbs.add(collectible);
         }
+    }
+    
+    createGlowTexture() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 64;
+        canvas.height = 64;
+        const ctx = canvas.getContext('2d');
+        
+        // Create radial gradient for glow
+        const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+        gradient.addColorStop(0, 'rgba(255, 215, 0, 0.8)');
+        gradient.addColorStop(0.5, 'rgba(255, 215, 0, 0.4)');
+        gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 64, 64);
+        
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        return texture;
     }
     
     spawnOrbsOnPlatforms() {
@@ -110,9 +170,22 @@ class CollectibleManager {
                 
                 // Spawn orb on odd-numbered platforms (1st, 3rd, 5th, etc.)
                 if (absolutePlatformNumber % 2 === 1) {
-                    const x = platform.x + (Math.random() - 0.5) * (platform.width - 1);
                     // Check if this is the moving platform (last platform in the array)
                     const isOnMovingPlatform = (this.lastPlatformCount + index) === this.sceneSetup.elevatedPlatforms.length - 1;
+                    
+                    // Debug platform dimensions
+                    console.log('Platform dimensions:', {
+                        x: platform.x,
+                        width: platform.width,
+                        isMoving: isOnMovingPlatform
+                    });
+                    
+                    // Calculate x position - center of the platform
+                    // For moving platform, adjust the center calculation
+                    const x = isOnMovingPlatform 
+                        ? platform.x + (platform.width / 2) - 1.5  // Increased leftward offset for moving platform
+                        : platform.x + (platform.width / 2);
+                    
                     console.log('Spawning orb on platform', absolutePlatformNumber, 'at position:', x, platform.y + 0.5);
                     this.spawnOrb(x, platform.y + 0.5, isOnMovingPlatform);
                 }
@@ -132,10 +205,18 @@ class CollectibleManager {
         this.movingPlatformOrbs.forEach(collectible => {
             if (!collectible.collected) {
                 collectible.sprite.position.x -= this.sceneSetup.platformSpeed * delta;
+                collectible.glowSprite.position.x = collectible.sprite.position.x;
+                collectible.particles.forEach(particle => {
+                    particle.position.x = collectible.sprite.position.x;
+                });
                 
                 // Remove orb if it goes off screen
                 if (collectible.sprite.position.x < -10) {
                     this.sceneSetup.scene.remove(collectible.sprite);
+                    this.sceneSetup.scene.remove(collectible.glowSprite);
+                    collectible.particles.forEach(particle => {
+                        this.sceneSetup.scene.remove(particle);
+                    });
                     this.movingPlatformOrbs.delete(collectible);
                     collectible.collected = true;
                 }
@@ -145,10 +226,35 @@ class CollectibleManager {
         // Check for new platforms and spawn orbs
         this.spawnOrbsOnPlatforms();
         
-        // Rotate orbs
+        // Update all collectibles
         this.collectibles.forEach(collectible => {
             if (!collectible.collected) {
+                // Update time for animations
+                collectible.time += delta * 2; // Bounce speed
+                collectible.pulseTime += delta * 4; // Pulse speed
+                collectible.particleTime += delta * 3; // Particle speed
+                
+                // Bounce animation
+                const bounceOffset = Math.sin(collectible.time) * 0.1;
+                collectible.sprite.position.y = collectible.initialY + bounceOffset;
+                collectible.glowSprite.position.y = collectible.sprite.position.y;
+                
+                // Pulse animation
+                const pulseScale = 1 + Math.sin(collectible.pulseTime) * 0.25;
+                collectible.sprite.scale.set(this.orbSize * pulseScale, this.orbSize * pulseScale, 1);
+                collectible.glowSprite.scale.set(this.orbSize * 1.5 * pulseScale, this.orbSize * 1.5 * pulseScale, 1);
+                
+                // Rotate orb
                 collectible.sprite.rotation.z += delta * 2;
+                
+                // Update particles
+                collectible.particles.forEach((particle, index) => {
+                    const angle = (index / collectible.particles.length) * Math.PI * 2 + collectible.particleTime;
+                    const radius = 0.2 + Math.sin(collectible.particleTime + index) * 0.05;
+                    particle.position.x = collectible.sprite.position.x + Math.cos(angle) * radius;
+                    particle.position.y = collectible.sprite.position.y + Math.sin(angle) * radius;
+                    particle.material.opacity = 0.4 + Math.sin(collectible.particleTime + index) * 0.2;
+                });
             }
         });
         
@@ -167,8 +273,8 @@ class CollectibleManager {
             if (collectible.collected) return;
             
             const orbPosition = collectible.sprite.position;
-            const orbWidth = 0.5;
-            const orbHeight = 0.5;
+            const orbWidth = this.orbSize;
+            const orbHeight = this.orbSize;
             
             // Check collision
             if (Math.abs(playerPosition.x - orbPosition.x) < (playerWidth + orbWidth) / 2 &&
@@ -176,17 +282,19 @@ class CollectibleManager {
                 
                 // Collect the orb
                 this.sceneSetup.scene.remove(collectible.sprite);
+                this.sceneSetup.scene.remove(collectible.glowSprite);
+                collectible.particles.forEach(particle => {
+                    this.sceneSetup.scene.remove(particle);
+                });
                 collectible.collected = true;
                 if (collectible.isOnMovingPlatform) {
                     this.movingPlatformOrbs.delete(collectible);
                 }
-                this.orbCount++;
                 
-                // Update UI
-                if (window.game && window.game.uiManager) {
-                    window.game.uiManager.updateOrbCounter(this.orbCount);
-                    window.game.uiManager.refillFireballs();
-                    window.game.uiManager.showGameMessage('Fireballs refilled!', 1000);
+                // Show quiz panel
+                if (window.game) {
+                    window.game.freezeGameLoop();
+                    window.game.quizManager.showQuiz();
                 }
             }
         });
