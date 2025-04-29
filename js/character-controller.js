@@ -367,8 +367,9 @@ class CharacterController {
         this.enemyJumpChance = 0.7; // 70% chance to jump when conditions are met
         this.enemyJumpDelayVariation = 0.2; // ±0.2 seconds variation in jump delay
         
+        // Plate functionality removed
         this.platesReturned = 0;
-        this.maxPlates = 5;
+        this.maxPlates = 0;
         
         // Add attack cooldown properties
         this.enemyAttackCooldown = 0;
@@ -694,12 +695,7 @@ class CharacterController {
             height: enemy.height
         };
         
-        // Check for plate return
-        if (this.attackEffects.checkPlateReturn(player.sprite.position.x, player.sprite.position.y)) {
-            if (window.game && window.game.inputManager.isKeyPressed('r')) {
-                this.attackEffects.returnPlate();
-            }
-        }
+        // Plate return functionality removed
         
         // Check each projectile
         for (let i = this.attackEffects.effects.length - 1; i >= 0; i--) {
@@ -714,37 +710,7 @@ class CharacterController {
                 const playerIsInFront = (enemy.sprite.rotation.y === 0 && player.sprite.position.x > enemy.sprite.position.x) ||
                                         (enemy.sprite.rotation.y === Math.PI && player.sprite.position.x < enemy.sprite.position.x);
                 
-                // Check if returned plate hits dishwasher
-                if (effect.dishType === 'plate' && dishDirection > 0 && effect.wasReturned) {
-                    if (Math.abs(projectilePos.x - enemyBounds.x) < (enemyBounds.width/2 + projectileRadius) &&
-                        Math.abs(projectilePos.y - enemyBounds.y) < (enemyBounds.height/2 + projectileRadius)) {
-                        // Plate hit dishwasher after being returned
-                        this.platesReturned++;
-                        if (window.game && window.game.uiManager) {
-                            window.game.uiManager.updatePlates(this.platesReturned);
-                        }
-                        
-                        // Apply damage and effects
-                        const newHealth = enemy.takeDamage(10, true); // Same damage as fireball
-                        this.attackEffects.createDamageEffect(enemyBounds.x, enemyBounds.y);
-                        
-                        // Check if dishwasher should be destroyed
-                        if (this.platesReturned >= this.maxPlates) {
-                            enemy.health = 0;
-                            if (window.game && window.game.uiManager) {
-                                window.game.uiManager.updateDishwasherHealth(0, enemy.maxHealth);
-                            }
-                            // Show victory message
-                            if (window.game && window.game.uiManager) {
-                                window.game.uiManager.showGameMessage('Dishwasher destroyed!', 3000);
-                            }
-                        }
-                        
-                        this.sceneSetup.scene.remove(effect.mesh);
-                        this.attackEffects.effects.splice(i, 1);
-                        continue;
-                    }
-                }
+                // Plate return functionality removed
                 
                 // Check if dish hits player
                 if (dishDirection === (enemy.sprite.rotation.y === 0 ? 1 : -1) &&

@@ -149,8 +149,8 @@ class Game {
                     }
                     
                     // Check for dishwasher weakened condition
-                    if (enemy.health <= 0 && this.collectibleManager && this.collectibleManager.platesRemaining > 0) {
-                        // console.log('Dishwasher weakened condition met - Enemy health:', enemy.health, 'Plates remaining:', this.collectibleManager.platesRemaining);
+                    if (enemy.health <= 30) {
+                        // Show weakened message when health is low
                         this.uiManager.showDishwasherWeakened();
                     }
                 }
@@ -158,20 +158,6 @@ class Game {
             
             if (this.collectibleManager) {
                 this.collectibleManager.update(delta, this.characterController.characters.player);
-                
-                // Debug collectible manager state
-                // console.log('Collectible Manager State:', {
-                //     platesFilled: this.collectibleManager.platesFilled,
-                //     platesRemaining: this.collectibleManager.platesRemaining,
-                //     platesCollected: this.collectibleManager.platesCollected
-                // });
-                
-                // Check for plates loaded condition
-                if (this.collectibleManager.platesFilled && 
-                    this.characterController.characters.enemy.health > 0) {
-                    // console.log('Plates loaded condition met - Plates filled:', this.collectibleManager.platesFilled, 'Enemy health:', this.characterController.characters.enemy.health);
-                    this.uiManager.showPlatesLoaded();
-                }
             }
             
             // Render the scene

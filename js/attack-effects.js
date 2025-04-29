@@ -145,7 +145,7 @@ class AttackEffects {
 
     createEnemyAttackEffect(x, y, direction = -1) {
         // Randomly select dish type
-        const dishTypes = ['plate', 'cup', 'glass'];
+        const dishTypes = ['cup', 'glass'];
         const randomDish = dishTypes[Math.floor(Math.random() * dishTypes.length)];
         
         // Create dish sprite
@@ -334,38 +334,12 @@ class AttackEffects {
         this.dishTrailParticles = [];
     }
 
-    // Add method to handle plate return
+    // Method stubs for plate return (removed functionality)
     returnPlate() {
-        if (this.plateToReturn && this.plateToReturn.dishType === 'plate') {
-            // Reverse the plate's direction
-            this.plateToReturn.velocity.x *= -1;
-            this.plateToReturn.mesh.material.rotation = 0;
-            // Mark the plate as returned
-            this.plateToReturn.wasReturned = true;
-            this.plateToReturn = null;
-            this.canReturnPlate = false;
-            return true;
-        }
         return false;
     }
     
-    // Add method to check if a plate can be returned
     checkPlateReturn(playerX, playerY) {
-        for (const effect of this.effects) {
-            if (effect.isDish && effect.dishType === 'plate') {
-                const distance = Math.sqrt(
-                    Math.pow(effect.mesh.position.x - playerX, 2) +
-                    Math.pow(effect.mesh.position.y - playerY, 2)
-                );
-                if (distance < 1.5) { // Adjust this value based on your game's scale
-                    this.plateToReturn = effect;
-                    this.canReturnPlate = true;
-                    return true;
-                }
-            }
-        }
-        this.canReturnPlate = false;
-        this.plateToReturn = null;
         return false;
     }
 }

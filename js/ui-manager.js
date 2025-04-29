@@ -5,18 +5,14 @@ class UIManager {
         this.tigerHealthBar = document.getElementById('tigerHealthBar').querySelector('.health-bar-fill');
         this.dishwasherHealthBar = document.getElementById('dishwasherHealthBar').querySelector('.health-bar-fill');
         this.fireballIconsContainer = document.getElementById('fireballIcons');
-        this.plateIconsContainer = document.getElementById('plateIcons');
         this.gameMessageElement = document.getElementById('gameMessage');
         
         this.maxFireballAmmo = 6;
         this.fireballAmmo = this.maxFireballAmmo;
         this.maxTigerHealth = 100;
         this.maxDishwasherHealth = 100;
-        this.maxPlates = 5;
-        this.platesCollected = 0;
         
         this.initializeFireballIcons();
-        this.initializePlateIcons();
         this.createSoundControls();
     }
     
@@ -74,22 +70,13 @@ class UIManager {
         }, duration);
     }
     
+    // Plate functionality removed
     initializePlateIcons() {
-        this.plateIconsContainer.innerHTML = '';
-        for (let i = 0; i < this.maxPlates; i++) {
-            const icon = document.createElement('div');
-            icon.className = 'plate-icon';
-            icon.style.opacity = i < this.platesCollected ? '1' : '0.3';
-            this.plateIconsContainer.appendChild(icon);
-        }
+        // Functionality removed
     }
     
     updatePlates(count) {
-        this.platesCollected = Math.min(count, this.maxPlates);
-        const icons = this.plateIconsContainer.querySelectorAll('.plate-icon');
-        icons.forEach((icon, index) => {
-            icon.style.opacity = index < this.platesCollected ? '1' : '0.3';
-        });
+        // Functionality removed
     }
     
     // Handle window resize for responsive design
@@ -172,12 +159,11 @@ class UIManager {
     // Specific status message methods
     showDishwasherWeakened() {
         // console.log('Showing dishwasher weakened message');
-        this.showStatusMessage('Dishwasher weakened! Fill it with plates to override!', 'dishwasher-weakened');
+        this.showStatusMessage('Dishwasher weakened! Keep attacking!', 'dishwasher-weakened');
     }
 
     showPlatesLoaded() {
-        // console.log('Showing plates loaded message');
-        this.showStatusMessage('Plates loaded! Now finish the dishwasher!', 'plates-loaded');
+        // Functionality removed
     }
 
     showVictory() {
