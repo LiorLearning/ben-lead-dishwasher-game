@@ -109,16 +109,16 @@ class QuizManager {
             }
         });
         
-        // Play answer sound
-        if (window.game && window.game.audioManager) {
-            window.game.audioManager.playSound('answer');
-        }
         
         // Update score and show feedback
         if (selectedAnswer === question.correctAnswer) {
             this.correctAnswers++;
             this.quizFeedback.textContent = 'Correct!';
             this.quizFeedback.style.color = '#32CD32';
+            // Play answer sound
+            if (window.game && window.game.audioManager) {
+                window.game.audioManager.playSound('collect');
+            }
         } else {
             this.quizFeedback.textContent = 'Wrong!';
             this.quizFeedback.style.color = '#FF0000';
@@ -128,7 +128,7 @@ class QuizManager {
         setTimeout(() => {
             this.currentQuestion++;
             this.showQuestion();
-        }, 1500);
+        }, 600);
     }
     
     showQuiz() {

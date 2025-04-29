@@ -186,6 +186,11 @@ class Character {
             }
             this.jumpCount++;
             this.isGrounded = false;
+            
+            // Play jump sound
+            if (this.isPlayer && window.game && window.game.audioManager) {
+                window.game.audioManager.playSound('jump');
+            }
         }
     }
     
@@ -225,6 +230,11 @@ class Character {
                 window.game.sceneSetup.triggerScreenShake();
                 window.game.sceneSetup.triggerRedOutline();
             }
+        }
+        
+        // Play hit sound
+        if (window.game && window.game.audioManager) {
+            window.game.audioManager.playSound('hit');
         }
         
         return this.health;
@@ -386,7 +396,7 @@ class CharacterController {
             case ' ': // Spacebar
             case 'ArrowUp':
                 if (!this.keys.jump) { // Only trigger jump on initial press
-                    console.log('Jump key pressed');
+                    // console.log('Jump key pressed');
                     this.keys.jump = true;
                     if (this.characters.player) {
                         this.characters.player.jump();
@@ -396,7 +406,7 @@ class CharacterController {
                 break;
             case 'Enter':
                 if (!this.keys.attack && this.characters.player) {
-                    console.log('Attack key pressed');
+                    // console.log('Attack key pressed');
                     this.keys.attack = true;
                     if (this.attackCooldown <= 0) {
                         this.performPlayerAttack();
@@ -423,11 +433,11 @@ class CharacterController {
                 break;
             case ' ': // Spacebar
             case 'ArrowUp':
-                console.log('Jump key released');
+                // console.log('Jump key released');
                 this.keys.jump = false;
                 break;
             case 'Enter':
-                console.log('Attack key released');
+                // console.log('Attack key released');
                 this.keys.attack = false;
                 break;
         }
@@ -824,6 +834,11 @@ class CharacterController {
             const startX = player.sprite.position.x + direction * (player.width / 2 + 0.3);
             const startY = player.sprite.position.y;
             this.attackEffects.createPlayerAttackEffect(startX, startY, direction);
+            
+            // Play hit sound instead of attack sound
+            if (window.game && window.game.audioManager) {
+                window.game.audioManager.playSound('hit');
+            }
         }
     }
     

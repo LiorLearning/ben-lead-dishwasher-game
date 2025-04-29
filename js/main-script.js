@@ -11,6 +11,7 @@ class Game {
             this.uiManager = new UIManager();
             this.inputManager = new InputManager();
             this.quizManager = new QuizManager();
+            this.audioManager = new AudioManager();
             
             // Game state
             this.lastTime = 0;
@@ -29,7 +30,7 @@ class Game {
     }
     
     async init() {
-        console.log('Game initializing...');
+        // console.log('Game initializing...');
         
         // Show loading message
         this.uiManager.showGameMessage('Loading game assets...', 10000);
@@ -47,6 +48,9 @@ class Game {
             // Remove loading message
             this.isLoading = false;
             this.uiManager.showGameMessage('Game Ready!', 2000);
+            
+            // Play background music
+            this.audioManager.playMusic('bgm');
             
             // Start the game loop
             this.isGameRunning = true;
@@ -124,9 +128,10 @@ class Game {
                     
                     // Check for defeat condition
                     if (player.health <= 0) {
-                        console.log('Defeat condition met - Player health:', player.health);
+                        // console.log('Defeat condition met - Player health:', player.health);
                         this.isGameRunning = false;
                         this.uiManager.showDefeat();
+                        this.audioManager.playDefeatSound();
                         return;
                     }
                 }
@@ -135,16 +140,17 @@ class Game {
                     this.uiManager.updateDishwasherHealth(enemy.health, enemy.maxHealth);
                     
                     // Check for victory condition
-                    if (enemy.health <= 0 && this.collectibleManager && this.collectibleManager.platesFilled) {
-                        console.log('Victory condition met - Enemy health:', enemy.health, 'Plates filled:', this.collectibleManager.platesFilled);
+                    if (enemy.health <= 0) {
+                        // console.log('Victory condition met - Enemy health:', enemy.health);
                         this.isGameRunning = false;
                         this.uiManager.showVictory();
+                        this.audioManager.playVictorySound();
                         return;
                     }
                     
                     // Check for dishwasher weakened condition
                     if (enemy.health <= 0 && this.collectibleManager && this.collectibleManager.platesRemaining > 0) {
-                        console.log('Dishwasher weakened condition met - Enemy health:', enemy.health, 'Plates remaining:', this.collectibleManager.platesRemaining);
+                        // console.log('Dishwasher weakened condition met - Enemy health:', enemy.health, 'Plates remaining:', this.collectibleManager.platesRemaining);
                         this.uiManager.showDishwasherWeakened();
                     }
                 }
@@ -154,16 +160,16 @@ class Game {
                 this.collectibleManager.update(delta, this.characterController.characters.player);
                 
                 // Debug collectible manager state
-                console.log('Collectible Manager State:', {
-                    platesFilled: this.collectibleManager.platesFilled,
-                    platesRemaining: this.collectibleManager.platesRemaining,
-                    platesCollected: this.collectibleManager.platesCollected
-                });
+                // console.log('Collectible Manager State:', {
+                //     platesFilled: this.collectibleManager.platesFilled,
+                //     platesRemaining: this.collectibleManager.platesRemaining,
+                //     platesCollected: this.collectibleManager.platesCollected
+                // });
                 
                 // Check for plates loaded condition
                 if (this.collectibleManager.platesFilled && 
                     this.characterController.characters.enemy.health > 0) {
-                    console.log('Plates loaded condition met - Plates filled:', this.collectibleManager.platesFilled, 'Enemy health:', this.characterController.characters.enemy.health);
+                    // console.log('Plates loaded condition met - Plates filled:', this.collectibleManager.platesFilled, 'Enemy health:', this.characterController.characters.enemy.health);
                     this.uiManager.showPlatesLoaded();
                 }
             }
@@ -255,6 +261,11 @@ class Game {
             this.characterController.cleanup();
         }
         
+        // Clean up audio resources
+        if (this.audioManager) {
+            this.audioManager.cleanup();
+        }
+        
         // Clean up Three.js resources
         if (this.sceneSetup) {
             this.sceneSetup.renderer.dispose();
@@ -296,7 +307,7 @@ window.addEventListener('load', () => {
             }
         });
         
-        console.log('Game loaded and running!');
+        // console.log('Game loaded and running!');
     } catch (error) {
         console.error('Error starting game:', error);
     }

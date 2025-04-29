@@ -106,16 +106,28 @@ class SceneSetup {
     }
 
     updateBackground(delta) {
+        // Check if backgroundSegments exists and has elements
+        if (!this.backgroundSegments || this.backgroundSegments.length === 0) {
+            return; // Skip update if no background segments exist yet
+        }
+        
         // Move all background segments
         this.backgroundSegments.forEach(segment => {
-            segment.position.x -= this.backgroundSpeed * delta;
+            if (segment && segment.position) {
+                segment.position.x -= this.backgroundSpeed * delta;
+            }
         });
 
         // Check if first segment is completely off screen
-        if (this.backgroundSegments[0].position.x <= -this.backgroundWidth) {
+        if (this.backgroundSegments[0] && this.backgroundSegments[0].position && 
+            this.backgroundSegments[0].position.x <= -this.backgroundWidth) {
             // Move first segment to the end
             const firstSegment = this.backgroundSegments.shift();
-            firstSegment.position.x = this.backgroundSegments[0].position.x + this.backgroundWidth;
+            if (this.backgroundSegments[0] && this.backgroundSegments[0].position) {
+                firstSegment.position.x = this.backgroundSegments[0].position.x + this.backgroundWidth;
+            } else {
+                firstSegment.position.x = this.backgroundWidth; // Default position if reference is missing
+            }
             this.backgroundSegments.push(firstSegment);
         }
     }
