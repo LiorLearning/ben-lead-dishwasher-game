@@ -1,6 +1,6 @@
-// fire-effect.js - Handles fire particle effects
+// poof-effect.js - Handles poof animation effect
 
-class FireEffect {
+class PoofEffect {
     constructor(scene, position) {
         this.scene = scene;
         this.position = position;
@@ -22,10 +22,10 @@ class FireEffect {
         // Create gradient
         const gradient = context.createRadialGradient(32, 32, 0, 32, 32, 32);
         gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
-        gradient.addColorStop(0.2, 'rgba(255, 200, 0, 0.8)');
-        gradient.addColorStop(0.4, 'rgba(255, 100, 0, 0.6)');
-        gradient.addColorStop(0.6, 'rgba(255, 50, 0, 0.4)');
-        gradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
+        gradient.addColorStop(0.2, 'rgba(200, 200, 255, 0.8)');
+        gradient.addColorStop(0.4, 'rgba(150, 150, 255, 0.6)');
+        gradient.addColorStop(0.6, 'rgba(100, 100, 255, 0.4)');
+        gradient.addColorStop(1, 'rgba(0, 0, 255, 0)');
         
         context.fillStyle = gradient;
         context.fillRect(0, 0, 64, 64);
@@ -38,16 +38,16 @@ class FireEffect {
         this.elapsed = 0;
         
         // Create initial particles
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 20; i++) {
             this.createParticle();
         }
     }
     
     createParticle() {
-        const size = 0.5 + Math.random() * 0.5;
+        const size = 0.3 + Math.random() * 0.3;
         const material = new THREE.SpriteMaterial({
             map: this.texture,
-            color: new THREE.Color(1, 0.5, 0),
+            color: new THREE.Color(0.7, 0.7, 1),
             transparent: true,
             opacity: 0.8,
             blending: THREE.AdditiveBlending
@@ -69,8 +69,8 @@ class FireEffect {
         this.particles.push({
             mesh: particle,
             velocity: new THREE.Vector2(
-                (Math.random() - 0.5) * 2,
-                (Math.random() - 0.5) * 2
+                (Math.random() - 0.5) * 3,
+                (Math.random() - 0.5) * 3
             ),
             lifetime: 0.5 + Math.random() * 0.5,
             elapsed: 0
@@ -124,4 +124,4 @@ class FireEffect {
 }
 
 // Export the class
-window.FireEffect = FireEffect; 
+window.PoofEffect = PoofEffect; 

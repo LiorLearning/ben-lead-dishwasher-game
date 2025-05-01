@@ -17,12 +17,19 @@ class Game {
             this.lastTime = 0;
             this.isGameRunning = false;
             this.isLoading = true;
+            this.isPaused = false;
             
             // Make game instance globally accessible
             window.game = this;
             
-            // Start the game initialization
-            this.init();
+            // Wait for BGM to load before showing loading screen
+            this.audioManager.waitForBGMLoad().then(() => {
+                console.log('BGM loaded, starting game initialization');
+                this.init();
+            }).catch(error => {
+                console.error('Error waiting for BGM to load:', error);
+                this.showError('Failed to load game audio. Please refresh the page.');
+            });
         } catch (error) {
             console.error('Error initializing game:', error);
             this.showError('Failed to initialize game. Please refresh the page.');
@@ -30,35 +37,37 @@ class Game {
     }
     
     async init() {
-        // console.log('Game initializing...');
-        
-        // Show loading message
-        this.uiManager.showGameMessage('Loading game assets...', 10000);
+        console.log('Game initializing...');
         
         try {
+            // Update loading progress
+            this.uiManager.updateLoadingProgress(10, 'Loading game assets...');
+            
             // Load all assets
             await this.assetsLoader.loadGameAssets();
+            this.uiManager.updateLoadingProgress(50, 'Setting up game world...');
             
             // Set up game world
             this.setupGameWorld();
+            this.uiManager.updateLoadingProgress(80, 'Initializing game components...');
             
             // Spawn initial orbs after everything is set up
             this.collectibleManager.spawnOrbsOnPlatforms();
             
-            // Remove loading message
-            this.isLoading = false;
-            this.uiManager.showGameMessage('Game Ready!', 2000);
-            
-            // Play background music
-            this.audioManager.playMusic('bgm');
-            
-            // Start the game loop
-            this.isGameRunning = true;
-            requestAnimationFrame(this.gameLoop.bind(this));
+            // Complete loading
+            this.uiManager.updateLoadingProgress(100, 'Game Ready!');
+            setTimeout(() => {
+                this.uiManager.hideLoadingScreen();
+                
+                // Start the game loop and play BGM
+                this.isGameRunning = true;
+                this.audioManager.playBGM();
+                requestAnimationFrame(this.gameLoop.bind(this));
+            }, 1000);
             
         } catch (error) {
             console.error('Error initializing game:', error);
-            this.uiManager.showGameMessage('Error loading game!', 5000);
+            this.uiManager.updateLoadingProgress(0, 'Error loading game! Please refresh.');
             this.isLoading = false;
         }
     }
@@ -102,7 +111,7 @@ class Game {
     }
     
     gameLoop(currentTime) {
-        if (!this.isGameRunning) return;
+        if (!this.isGameRunning || this.isPaused) return;
         
         try {
             // Calculate delta time in seconds
@@ -128,10 +137,9 @@ class Game {
                     
                     // Check for defeat condition
                     if (player.health <= 0) {
-                        // console.log('Defeat condition met - Player health:', player.health);
+                        console.log('Defeat condition met - Player health:', player.health);
                         this.isGameRunning = false;
                         this.uiManager.showDefeat();
-                        this.audioManager.playDefeatSound();
                         return;
                     }
                 }
@@ -140,17 +148,16 @@ class Game {
                     this.uiManager.updateDishwasherHealth(enemy.health, enemy.maxHealth);
                     
                     // Check for victory condition
-                    if (enemy.health <= 0) {
-                        // console.log('Victory condition met - Enemy health:', enemy.health);
+                    if (enemy.health <= 0 && this.collectibleManager && this.collectibleManager.platesFilled) {
+                        console.log('Victory condition met - Enemy health:', enemy.health, 'Plates filled:', this.collectibleManager.platesFilled);
                         this.isGameRunning = false;
                         this.uiManager.showVictory();
-                        this.audioManager.playVictorySound();
                         return;
                     }
                     
                     // Check for dishwasher weakened condition
                     if (enemy.health <= 0 && this.collectibleManager && this.collectibleManager.platesRemaining > 0) {
-                        // console.log('Dishwasher weakened condition met - Enemy health:', enemy.health, 'Plates remaining:', this.collectibleManager.platesRemaining);
+                        console.log('Dishwasher weakened condition met - Enemy health:', enemy.health, 'Plates remaining:', this.collectibleManager.platesRemaining);
                         this.uiManager.showDishwasherWeakened();
                     }
                 }
@@ -160,18 +167,23 @@ class Game {
                 this.collectibleManager.update(delta, this.characterController.characters.player);
                 
                 // Debug collectible manager state
-                // console.log('Collectible Manager State:', {
-                //     platesFilled: this.collectibleManager.platesFilled,
-                //     platesRemaining: this.collectibleManager.platesRemaining,
-                //     platesCollected: this.collectibleManager.platesCollected
-                // });
+                console.log('Collectible Manager State:', {
+                    platesFilled: this.collectibleManager.platesFilled,
+                    platesRemaining: this.collectibleManager.platesRemaining,
+                    platesCollected: this.collectibleManager.platesCollected
+                });
                 
                 // Check for plates loaded condition
                 if (this.collectibleManager.platesFilled && 
                     this.characterController.characters.enemy.health > 0) {
-                    // console.log('Plates loaded condition met - Plates filled:', this.collectibleManager.platesFilled, 'Enemy health:', this.characterController.characters.enemy.health);
+                    console.log('Plates loaded condition met - Plates filled:', this.collectibleManager.platesFilled, 'Enemy health:', this.characterController.characters.enemy.health);
                     this.uiManager.showPlatesLoaded();
                 }
+            }
+            
+            // Update portal effect if it exists
+            if (this.characterController.portalEffect) {
+                this.characterController.portalEffect.update(delta);
             }
             
             // Render the scene
@@ -261,11 +273,6 @@ class Game {
             this.characterController.cleanup();
         }
         
-        // Clean up audio resources
-        if (this.audioManager) {
-            this.audioManager.cleanup();
-        }
-        
         // Clean up Three.js resources
         if (this.sceneSetup) {
             this.sceneSetup.renderer.dispose();
@@ -273,11 +280,29 @@ class Game {
     }
     
     freezeGameLoop() {
+        this.isPaused = true;
         this.isGameRunning = false;
+        this.audioManager.stopBGM();
     }
     
     unfreezeGameLoop() {
+        this.isPaused = false;
         this.isGameRunning = true;
+        this.audioManager.playBGM();
+        this.lastTime = performance.now();
+        requestAnimationFrame(this.gameLoop.bind(this));
+    }
+
+    pauseGame() {
+        this.isPaused = true;
+        this.isGameRunning = false;
+        this.audioManager.stopBGM();
+    }
+
+    resumeGame() {
+        this.isPaused = false;
+        this.isGameRunning = true;
+        this.audioManager.playBGM();
         this.lastTime = performance.now();
         requestAnimationFrame(this.gameLoop.bind(this));
     }
@@ -307,7 +332,7 @@ window.addEventListener('load', () => {
             }
         });
         
-        // console.log('Game loaded and running!');
+        console.log('Game loaded and running!');
     } catch (error) {
         console.error('Error starting game:', error);
     }

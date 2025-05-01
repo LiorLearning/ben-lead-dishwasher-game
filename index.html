@@ -86,7 +86,7 @@
         /* Fireball Ammo Display */
         #fireballAmmoDisplay {
             position: absolute;
-            top: 20px;
+            bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
@@ -168,39 +168,6 @@
             #fireballAmmoDisplay {
                 padding: 8px 15px;
             }
-        }
-        
-        /* Plate Counter Display */
-        #plateCounterDisplay {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 20px;
-            background: rgba(0, 0, 0, 0.7);
-            border-radius: 10px;
-            pointer-events: none;
-            z-index: 10;
-            border: 2px solid #FFFFFF;
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
-        }
-        
-        #plateIcons {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-        
-        .plate-icon {
-            width: 32px;
-            height: 32px;
-            background-color: #FFFFFF;
-            border-radius: 50%;
-            box-shadow: 0 0 10px #FFFFFF;
-            transition: opacity 0.3s ease;
         }
         
         /* Quiz Panel Styles */
@@ -437,16 +404,16 @@
         }
 
         .status-message.victory {
-            color: #FFD700;
-            text-shadow: 0 0 15px #FFD700;
+            color: #32CD32;
+            text-shadow: 0 0 10px #32CD32;
             font-weight: bold;
-            font-size: 72px;
-            animation: victoryPulse 1.5s infinite;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 30px 50px;
+            font-size: 48px;
+            animation: victoryPulse 2s infinite;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px 40px;
             border-radius: 15px;
-            border: 5px solid #FFD700;
-            box-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+            border: 3px solid #32CD32;
+            box-shadow: 0 0 20px rgba(50, 205, 50, 0.5);
         }
 
         .status-message.defeat {
@@ -456,20 +423,20 @@
         }
 
         .play-again-button {
-            background-color: #32CD32;
-            color: #FFF;
-            border: 3px solid #FFD700;
-            padding: 20px 40px;
+            background-color: #FFD700;
+            color: #000;
+            border: none;
+            padding: 15px 30px;
             font-family: 'Press Start 2P', cursive;
-            font-size: 32px;
-            border-radius: 15px;
+            font-size: 24px;
+            border-radius: 10px;
             cursor: pointer;
-            margin-top: 50px;
+            margin-top: 30px;
             opacity: 0;
             transform: translateY(20px);
             transition: opacity 0.5s ease, transform 0.5s ease;
             pointer-events: auto;
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.7);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
         }
 
         .play-again-button.visible {
@@ -478,9 +445,9 @@
         }
 
         .play-again-button:hover {
-            background-color: #28A428;
-            box-shadow: 0 0 30px rgba(255, 215, 0, 1);
-            transform: scale(1.1);
+            background-color: #FFC000;
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.8);
+            transform: scale(1.05);
         }
 
         @keyframes glow {
@@ -494,27 +461,129 @@
         }
 
         @keyframes victoryPulse {
-            0% { transform: scale(1); text-shadow: 0 0 15px #FFD700; }
-            25% { transform: scale(1.05); text-shadow: 0 0 25px #FFD700; }
-            50% { transform: scale(1.1); text-shadow: 0 0 35px #FFD700; }
-            75% { transform: scale(1.05); text-shadow: 0 0 25px #FFD700; }
-            100% { transform: scale(1); text-shadow: 0 0 15px #FFD700; }
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        /* Pause Button Styles */
+        #pauseButton {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            border: 2px solid #FFFFFF;
+            border-radius: 10px;
+            padding: 10px 20px;
+            color: #FFFFFF;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        #pauseButton:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+
+        #pauseButton.paused {
+            background-color: rgba(255, 0, 0, 0.7);
+            border-color: #FF0000;
+        }
+
+        @media (max-width: 768px) {
+            #pauseButton {
+                right: 20px;
+                transform: none;
+                font-size: 14px;
+                padding: 8px 16px;
+            }
+        }
+
+        /* Loading Screen */
+        #loadingScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+
+        #loadingScreen.fade-out {
+            opacity: 0;
+        }
+
+        .loading-title {
+            color: #FFD700;
+            font-size: 32px;
+            margin-bottom: 30px;
+            text-align: center;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        .loading-progress-container {
+            width: 80%;
+            max-width: 400px;
+            height: 20px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .loading-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #FFD700, #FFA500);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+
+        .loading-message {
+            color: #FFFFFF;
+            font-size: 16px;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .loading-title {
+                font-size: 24px;
+            }
+            
+            .loading-message {
+                font-size: 14px;
+            }
         }
     </style>
 </head>
 <body>
+    <div id="loadingScreen">
+        <div class="loading-title">Ben and Mathkraft's<br>Tiger 🐯 vs The Dishwasher 🧽</div>
+        <div class="loading-progress-container">
+            <div class="loading-progress-bar"></div>
+        </div>
+        <div class="loading-message">Loading assets...</div>
+    </div>
+
     <div id="intro-screen">
-        <h1 class="intro-title">Created by BEN</h1>
+        <h1 class="intro-title">Ben and Mathkraft's<br>Tiger 🐯 vs The Dishwasher 🧽</h1>
         <div class="controls-list">
             <p>Press <strong>E</strong> to attack</p>
-            <p>Press <strong>R</strong> to return</p>
-            <p>Spacebar to jump and dodge the dishes</p>
         </div>
         <div class="how-to-win">
             <h2>How to Win?</h2>
             <ul>
                 <li>Reduce dishwasher health to 0</li>
-                <li>Fill it with 5 plates to override it</li>
             </ul>
         </div>
         <button class="play-button" onclick="startGame()">Play</button>
@@ -540,11 +609,6 @@
     <div id="fireballAmmoDisplay">
         <div class="ammo-text">Fireballs:</div>
         <div id="fireballIcons"></div>
-    </div>
-    
-    <div id="plateCounterDisplay">
-        <div class="ammo-text">Plates:</div>
-        <div id="plateIcons"></div>
     </div>
     
     <div id="gameMessage"></div>
@@ -580,14 +644,16 @@
     <!-- Game Scripts -->
     <script src="js/assets-loader.js"></script>
     <script src="js/scene-setup.js"></script>
-    <script src="js/ui-manager.js"></script>
     <script src="js/input-manager.js"></script>
-    <script src="js/collectible-manager.js"></script>
-    <script src="js/attack-effects.js"></script>
-    <script src="js/fire-effect.js"></script>
-    <script src="js/fire-trail.js"></script>
-    <script src="js/character-controller.js"></script>
+    <script src="js/ui-manager.js"></script>
     <script src="js/quiz-manager.js"></script>
+    <script src="js/collectible-manager.js"></script>
+    <script src="js/character-controller.js"></script>
+    <script src="js/attack-effects.js"></script>
+    <script src="js/fire-trail.js"></script>
+    <script src="js/portal-effect.js"></script>
+    <script src="js/fire-effect.js"></script>
+    <script src="js/poof-effect.js"></script>
     <script src="js/audio-manager.js"></script>
     <script src="js/main-script.js"></script>
     <script>
@@ -595,14 +661,36 @@
         function startGame() {
             const introScreen = document.getElementById('intro-screen');
             introScreen.style.opacity = '0';
-            setTimeout(() => {
-                introScreen.style.display = 'none';
-                // Initialize your game here
+            
+            // If game exists, reset and resume it
+            if (window.game) {
+                // Reset game state
+                window.game.isGameRunning = true;
+                window.game.isPaused = false;
+                window.game.lastTime = performance.now();
+                
+                // Reset game components
+                if (window.game.characterController) {
+                    window.game.characterController.reset();
+                }
+                if (window.game.collectibleManager) {
+                    window.game.collectibleManager.reset();
+                }
+                
+                // Resume the game
+                window.game.resumeGame();
+            } else {
+                // Initialize new game
                 if (typeof initGame === 'function') {
                     initGame();
                 }
+            }
+            
+            setTimeout(() => {
+                introScreen.style.display = 'none';
             }, 500); // Match this with the CSS transition duration
         }
     </script>
+    <button id="pauseButton">PLAY</button>
 </body>
 </html> 

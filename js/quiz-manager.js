@@ -14,7 +14,13 @@ class QuizManager {
         
         // Add click event listeners to answer buttons
         this.answerButtons.forEach(button => {
-            button.addEventListener('click', () => this.handleAnswer(button));
+            button.addEventListener('click', () => {
+                // Play button sound
+                if (window.game && window.game.audioManager) {
+                    window.game.audioManager.playButtonSound();
+                }
+                this.handleAnswer(button);
+            });
         });
     }
     
@@ -109,26 +115,30 @@ class QuizManager {
             }
         });
         
+        // Play appropriate sound
+        if (window.game && window.game.audioManager) {
+            if (selectedAnswer === question.correctAnswer) {
+                window.game.audioManager.playAnswerSound();
+            } else {
+                window.game.audioManager.playWrongSound();
+            }
+        }
         
         // Update score and show feedback
         if (selectedAnswer === question.correctAnswer) {
             this.correctAnswers++;
             this.quizFeedback.textContent = 'Correct!';
             this.quizFeedback.style.color = '#32CD32';
-            // Play answer sound
-            if (window.game && window.game.audioManager) {
-                window.game.audioManager.playSound('collect');
-            }
         } else {
             this.quizFeedback.textContent = 'Wrong!';
             this.quizFeedback.style.color = '#FF0000';
         }
         
-        // Move to next question after a delay
+        // Move to next question after a shorter delay
         setTimeout(() => {
             this.currentQuestion++;
             this.showQuestion();
-        }, 600);
+        }, 800); // Reduced from 1500ms to 800ms
     }
     
     showQuiz() {
@@ -154,7 +164,7 @@ class QuizManager {
         this.quizFeedback.textContent = `You earned ${this.earnedFireballs} fireballs!`;
         this.quizFeedback.style.color = '#FFD700';
         
-        // Hide quiz panel after delay
+        // Hide quiz panel after a shorter delay
         setTimeout(() => {
             this.hideQuiz();
             
@@ -164,14 +174,11 @@ class QuizManager {
                 window.game.uiManager.updateFireballAmmo(currentAmmo + this.earnedFireballs);
             }
             
-            // Resume game and request pointer lock
+            // Resume game and request pointer lock immediately
             if (window.game) {
                 window.game.unfreezeGameLoop();
-                // Request pointer lock after a short delay to ensure the quiz panel is fully hidden
-                setTimeout(() => {
-                    document.body.requestPointerLock();
-                }, 100);
+                document.body.requestPointerLock();
             }
-        }, 2000);
+        }, 1000); // Reduced from 2000ms to 1000ms
     }
 } 

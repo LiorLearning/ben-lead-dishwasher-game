@@ -5,19 +5,22 @@ class UIManager {
         this.tigerHealthBar = document.getElementById('tigerHealthBar').querySelector('.health-bar-fill');
         this.dishwasherHealthBar = document.getElementById('dishwasherHealthBar').querySelector('.health-bar-fill');
         this.fireballIconsContainer = document.getElementById('fireballIcons');
-        this.plateIconsContainer = document.getElementById('plateIcons');
         this.gameMessageElement = document.getElementById('gameMessage');
+        this.pauseButton = document.getElementById('pauseButton');
+        
+        // Loading screen elements
+        this.loadingScreen = document.getElementById('loadingScreen');
+        this.loadingProgressBar = document.querySelector('.loading-progress-bar');
+        this.loadingMessage = document.querySelector('.loading-message');
         
         this.maxFireballAmmo = 6;
         this.fireballAmmo = this.maxFireballAmmo;
         this.maxTigerHealth = 100;
         this.maxDishwasherHealth = 100;
-        this.maxPlates = 5;
-        this.platesCollected = 0;
+        this.isPaused = false;
         
         this.initializeFireballIcons();
-        this.initializePlateIcons();
-        this.createSoundControls();
+        this.initializePauseButton();
     }
     
     updateTigerHealth(current, max) {
@@ -65,7 +68,7 @@ class UIManager {
         this.showGameMessage('Fireballs Refilled!', 1500);
     }
     
-    showGameMessage(message, duration = 2000) {
+    showGameMessage(message, duration = 3000) {
         this.gameMessageElement.textContent = message;
         this.gameMessageElement.style.display = 'block';
         
@@ -74,22 +77,66 @@ class UIManager {
         }, duration);
     }
     
-    initializePlateIcons() {
-        this.plateIconsContainer.innerHTML = '';
-        for (let i = 0; i < this.maxPlates; i++) {
-            const icon = document.createElement('div');
-            icon.className = 'plate-icon';
-            icon.style.opacity = i < this.platesCollected ? '1' : '0.3';
-            this.plateIconsContainer.appendChild(icon);
-        }
-    }
-    
-    updatePlates(count) {
-        this.platesCollected = Math.min(count, this.maxPlates);
-        const icons = this.plateIconsContainer.querySelectorAll('.plate-icon');
-        icons.forEach((icon, index) => {
-            icon.style.opacity = index < this.platesCollected ? '1' : '0.3';
+    showLevelCompleteDialog() {
+        // Create dialog container
+        const dialog = document.createElement('div');
+        dialog.style.position = 'absolute';
+        dialog.style.top = '50%';
+        dialog.style.left = '50%';
+        dialog.style.transform = 'translate(-50%, -50%)';
+        dialog.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+        dialog.style.padding = '20px';
+        dialog.style.borderRadius = '10px';
+        dialog.style.border = '2px solid #FFD700';
+        dialog.style.color = '#FFFFFF';
+        dialog.style.fontFamily = "'Press Start 2P', cursive";
+        dialog.style.textAlign = 'center';
+        dialog.style.zIndex = '1000';
+        
+        // Create message
+        const message = document.createElement('div');
+        message.textContent = 'Level 1 completed, next level to be designed by Ben';
+        message.style.marginBottom = '20px';
+        
+        // Create play again button
+        const playAgainButton = document.createElement('button');
+        playAgainButton.textContent = 'Play Again';
+        playAgainButton.style.backgroundColor = '#FFD700';
+        playAgainButton.style.color = '#000000';
+        playAgainButton.style.border = 'none';
+        playAgainButton.style.padding = '10px 20px';
+        playAgainButton.style.borderRadius = '5px';
+        playAgainButton.style.fontFamily = "'Press Start 2P', cursive";
+        playAgainButton.style.cursor = 'pointer';
+        playAgainButton.style.fontSize = '16px';
+        playAgainButton.style.marginTop = '10px';
+        playAgainButton.style.transition = 'all 0.3s ease';
+        
+        // Add hover effect
+        playAgainButton.addEventListener('mouseover', () => {
+            playAgainButton.style.transform = 'scale(1.05)';
+            playAgainButton.style.boxShadow = '0 0 10px #FFD700';
         });
+        
+        playAgainButton.addEventListener('mouseout', () => {
+            playAgainButton.style.transform = 'scale(1)';
+            playAgainButton.style.boxShadow = 'none';
+        });
+        
+        // Add click handler
+        playAgainButton.addEventListener('click', () => {
+            window.location.reload();
+        });
+        
+        // Add elements to dialog
+        dialog.appendChild(message);
+        dialog.appendChild(playAgainButton);
+        document.body.appendChild(dialog);
+        
+        // Pause the game
+        if (window.game) {
+            window.game.isGameRunning = false;
+        }
     }
     
     // Handle window resize for responsive design
@@ -106,7 +153,7 @@ class UIManager {
 
     // Game status message methods
     showStatusMessage(message, type, showPlayAgain = false) {
-        // console.log('Showing status message:', message, 'Type:', type, 'Show play again:', showPlayAgain);
+        console.log('Showing status message:', message, 'Type:', type, 'Show play again:', showPlayAgain);
         const statusPanel = document.getElementById('game-status-panel');
         if (!statusPanel) {
             console.error('Game status panel not found!');
@@ -129,7 +176,21 @@ class UIManager {
             playAgainButton.className = 'play-again-button';
             playAgainButton.textContent = 'Play Again';
             playAgainButton.onclick = () => {
-                window.location.reload();
+                // Pause the game first
+                if (window.game) {
+                    window.game.pauseGame();
+                    // Reset game state
+                    window.game.isGameRunning = false;
+                    window.game.isPaused = true;
+                }
+                
+                // Show intro screen
+                const introScreen = document.getElementById('intro-screen');
+                introScreen.style.display = 'flex';
+                introScreen.style.opacity = '1';
+                
+                // Hide status panel
+                statusPanel.innerHTML = '';
             };
             statusPanel.appendChild(playAgainButton);
 
@@ -147,7 +208,7 @@ class UIManager {
     }
 
     hideStatusMessage() {
-        // console.log('Hiding status message');
+        console.log('Hiding status message');
         const statusPanel = document.getElementById('game-status-panel');
         if (!statusPanel) {
             console.error('Game status panel not found when trying to hide message!');
@@ -171,24 +232,24 @@ class UIManager {
 
     // Specific status message methods
     showDishwasherWeakened() {
-        // console.log('Showing dishwasher weakened message');
+        console.log('Showing dishwasher weakened message');
         this.showStatusMessage('Dishwasher weakened! Fill it with plates to override!', 'dishwasher-weakened');
     }
 
     showPlatesLoaded() {
-        // console.log('Showing plates loaded message');
+        console.log('Showing plates loaded message');
         this.showStatusMessage('Plates loaded! Now finish the dishwasher!', 'plates-loaded');
     }
 
     showVictory() {
-        // console.log('Showing victory message');
+        console.log('Showing victory message');
         // Pause the game
         if (window.game) {
-            window.game.isGameRunning = false;
+            window.game.pauseGame();
         }
         
         // Show victory message with play again button
-        this.showStatusMessage('YOU WIN!', 'victory', true);
+        this.showStatusMessage('VICTORY! You overpowered the Dishwasher!', 'victory', true);
         
         // Play victory sound if available
         if (window.game && window.game.audioManager) {
@@ -197,113 +258,62 @@ class UIManager {
     }
 
     showDefeat() {
-        // console.log('Showing defeat message');
+        console.log('Showing defeat message');
         // Pause the game
         if (window.game) {
-            window.game.isGameRunning = false;
+            window.game.pauseGame();
         }
         
-        // Show defeat message with play again button
         this.showStatusMessage('You were defeated! Try again?', 'defeat', true);
-        
-        // Play defeat sound if available
-        if (window.game && window.game.audioManager) {
-            window.game.audioManager.playDefeatSound();
-        }
     }
 
-    createSoundControls() {
-        // Create sound control container
-        const soundControlContainer = document.createElement('div');
-        soundControlContainer.id = 'soundControls';
-        soundControlContainer.className = 'sound-controls';
-        
-        // Create sound button
-        const soundButton = document.createElement('button');
-        soundButton.id = 'soundToggle';
-        soundButton.className = 'sound-toggle';
-        soundButton.innerHTML = '<i class="fas fa-volume-up"></i>';
-        soundButton.setAttribute('title', 'Toggle Sound');
-        
-        // Add click event
-        soundButton.addEventListener('click', () => {
-            this.toggleSound(soundButton);
-        });
-        
-        // Append to container
-        soundControlContainer.appendChild(soundButton);
-        
-        // Append to game UI
-        document.body.appendChild(soundControlContainer);
-        
-        // Add Font Awesome for icons if not already present
-        if (!document.getElementById('font-awesome')) {
-            const fontAwesome = document.createElement('link');
-            fontAwesome.id = 'font-awesome';
-            fontAwesome.rel = 'stylesheet';
-            fontAwesome.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css';
-            document.head.appendChild(fontAwesome);
-        }
-        
-        // Add CSS for sound controls
-        this.addSoundControlStyles();
-    }
-    
-    toggleSound(button) {
-        if (window.game && window.game.audioManager) {
-            const isMuted = window.game.audioManager.toggleMute();
-            
-            // Update button icon
-            if (isMuted) {
-                button.innerHTML = '<i class="fas fa-volume-mute"></i>';
-                button.setAttribute('title', 'Unmute Sound');
-            } else {
-                button.innerHTML = '<i class="fas fa-volume-up"></i>';
-                button.setAttribute('title', 'Mute Sound');
-            }
-        }
-    }
-    
-    addSoundControlStyles() {
-        // Check if styles already exist
-        if (document.getElementById('sound-control-styles')) {
+    initializePauseButton() {
+        if (!this.pauseButton) {
+            console.error('Pause button not found!');
             return;
         }
         
-        // Create style element
-        const style = document.createElement('style');
-        style.id = 'sound-control-styles';
-        style.textContent = `
-            .sound-controls {
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                z-index: 1000;
-            }
-            
-            .sound-toggle {
-                width: 40px;
-                height: 40px;
-                border-radius: 50%;
-                background-color: rgba(0, 0, 0, 0.6);
-                border: 2px solid #fff;
-                color: #fff;
-                font-size: 18px;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                transition: all 0.3s ease;
-            }
-            
-            .sound-toggle:hover {
-                background-color: rgba(0, 0, 0, 0.8);
-                transform: scale(1.1);
-            }
-        `;
+        this.pauseButton.textContent = 'PAUSE';
+        this.pauseButton.addEventListener('click', () => {
+            this.togglePause();
+        });
         
-        // Append to head
-        document.head.appendChild(style);
+        // Set initial state
+        this.isPaused = false;
+        this.pauseButton.classList.remove('paused');
+    }
+
+    togglePause() {
+        this.isPaused = !this.isPaused;
+        this.pauseButton.textContent = this.isPaused ? 'PLAY' : 'PAUSE';
+        this.pauseButton.classList.toggle('paused', this.isPaused);
+        
+        if (window.game) {
+            if (this.isPaused) {
+                window.game.freezeGameLoop();
+            } else {
+                window.game.unfreezeGameLoop();
+            }
+        }
+    }
+
+    // Loading screen methods
+    updateLoadingProgress(progress, message) {
+        if (this.loadingProgressBar) {
+            this.loadingProgressBar.style.width = `${progress}%`;
+        }
+        if (this.loadingMessage && message) {
+            this.loadingMessage.textContent = message;
+        }
+    }
+
+    hideLoadingScreen() {
+        if (this.loadingScreen) {
+            this.loadingScreen.classList.add('fade-out');
+            setTimeout(() => {
+                this.loadingScreen.style.display = 'none';
+            }, 500);
+        }
     }
 }
 

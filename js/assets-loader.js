@@ -70,6 +70,31 @@ class AssetsLoader {
         // Load collectible textures
         this.loadTexture('fireOrb', 'assets/fire-orb.png');
         
+        // Preload audio files
+        const audioFiles = [
+            'assets/bgm.mp3',
+            'assets/roar.mp3',
+            'assets/dish.mp3',
+            'assets/answer.mp3',
+            'assets/wrong.mp3',
+            'assets/button.mp3',
+            'assets/explosion.mp3',
+            'assets/portal.mp3'
+        ];
+        
+        const audioPromises = audioFiles.map(url => {
+            return new Promise((resolve, reject) => {
+                const audio = new Audio();
+                audio.preload = 'auto';
+                audio.oncanplaythrough = () => resolve(audio);
+                audio.onerror = (error) => reject(error);
+                audio.src = url;
+                audio.load();
+            });
+        });
+        
+        this.loadingPromises.push(...audioPromises);
+        
         // Return a promise that resolves when all assets are loaded
         return Promise.all(this.loadingPromises).then(() => {
             console.log('All assets loaded successfully');

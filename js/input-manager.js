@@ -6,6 +6,10 @@ class InputManager {
 
     setupEventListeners() {
         window.addEventListener('keydown', (e) => {
+            // Prevent spacebar from affecting pause state
+            if (e.key === ' ' && window.game && window.game.uiManager.isPaused) {
+                return;
+            }
             this.keys[e.key.toLowerCase()] = true;
         });
 

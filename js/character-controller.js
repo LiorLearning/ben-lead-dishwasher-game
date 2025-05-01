@@ -186,11 +186,6 @@ class Character {
             }
             this.jumpCount++;
             this.isGrounded = false;
-            
-            // Play jump sound
-            if (this.isPlayer && window.game && window.game.audioManager) {
-                window.game.audioManager.playSound('jump');
-            }
         }
     }
     
@@ -224,17 +219,38 @@ class Character {
             // Strong shake and fire effect for dishwasher when hit by fire
             this.triggerShake(5); // Increased intensity
             this.triggerFireEffect();
+            
+            // Play explosion sound when dishwasher is hit by fire
+            if (window.game && window.game.audioManager) {
+                window.game.audioManager.playExplosionSound();
+            }
+            
+            // Remove dishwasher sprite and stop dish throwing when health reaches zero
+            if (this.health <= 0) {
+                // Store the dishwasher's position before removing it
+                const dishwasherPosition = this.sprite.position.clone();
+                
+                this.scene.remove(this.sprite);
+                if (this.shadow) {
+                    this.scene.remove(this.shadow);
+                }
+                // Stop dish throwing by setting a flag
+                this.isDefeated = true;
+
+                // Create portal effect at the dishwasher's position
+                this.portalEffect = new PortalEffect(this.scene, dishwasherPosition);
+            }
         } else if (this.isPlayer) {
             // Screen shake and red outline for tiger
             if (window.game && window.game.sceneSetup) {
                 window.game.sceneSetup.triggerScreenShake();
                 window.game.sceneSetup.triggerRedOutline();
             }
-        }
-        
-        // Play hit sound
-        if (window.game && window.game.audioManager) {
-            window.game.audioManager.playSound('hit');
+            
+            // Play dish hit sound when tiger is hit
+            if (window.game && window.game.audioManager) {
+                window.game.audioManager.playDishHitSound();
+            }
         }
         
         return this.health;
@@ -255,6 +271,12 @@ class Character {
         if (this.fireEffect) {
             this.fireEffect.cleanup();
             this.fireEffect = null;
+        }
+        
+        // Cleanup portal effect
+        if (this.portalEffect) {
+            this.portalEffect.cleanup();
+            this.portalEffect = null;
         }
     }
     
@@ -393,10 +415,9 @@ class CharacterController {
             case 'ArrowRight':
                 this.keys.right = true;
                 break;
-            case ' ': // Spacebar
             case 'ArrowUp':
                 if (!this.keys.jump) { // Only trigger jump on initial press
-                    // console.log('Jump key pressed');
+                    console.log('Jump key pressed');
                     this.keys.jump = true;
                     if (this.characters.player) {
                         this.characters.player.jump();
@@ -406,7 +427,7 @@ class CharacterController {
                 break;
             case 'Enter':
                 if (!this.keys.attack && this.characters.player) {
-                    // console.log('Attack key pressed');
+                    console.log('Attack key pressed');
                     this.keys.attack = true;
                     if (this.attackCooldown <= 0) {
                         this.performPlayerAttack();
@@ -433,11 +454,11 @@ class CharacterController {
                 break;
             case ' ': // Spacebar
             case 'ArrowUp':
-                // console.log('Jump key released');
+                console.log('Jump key released');
                 this.keys.jump = false;
                 break;
             case 'Enter':
-                // console.log('Attack key released');
+                console.log('Attack key released');
                 this.keys.attack = false;
                 break;
         }
@@ -454,6 +475,9 @@ class CharacterController {
             
             const player = new Character(this.sceneSetup.scene, tigerSprite, 'Fireheart', x, y, collisionSize, collisionSize);
             player.isPlayer = true;
+            
+            // Set z-position to be in front of portal
+            player.sprite.position.z = 0.1; // Portal is at -0.1, so this puts tiger in front
             
             // Adjustable margins (in world units)
             player.leftMargin = 4;  // Reduced from 6
@@ -544,6 +568,20 @@ class CharacterController {
         // Update enemy jump cooldown
         if (this.enemyJumpCooldown > 0) {
             this.enemyJumpCooldown -= delta;
+        }
+        
+        // Update poof effect if it exists
+        if (this.poofEffect) {
+            this.poofEffect.update(delta);
+            if (!this.poofEffect.isActive) {
+                this.poofEffect.cleanup();
+                this.poofEffect = null;
+            }
+        }
+        
+        // Check for portal collision if portal exists
+        if (this.characters.enemy && this.characters.enemy.portalEffect) {
+            this.checkPortalCollision();
         }
         
         // Update characters
@@ -694,13 +732,6 @@ class CharacterController {
             height: enemy.height
         };
         
-        // Check for plate return
-        if (this.attackEffects.checkPlateReturn(player.sprite.position.x, player.sprite.position.y)) {
-            if (window.game && window.game.inputManager.isKeyPressed('r')) {
-                this.attackEffects.returnPlate();
-            }
-        }
-        
         // Check each projectile
         for (let i = this.attackEffects.effects.length - 1; i >= 0; i--) {
             const effect = this.attackEffects.effects[i];
@@ -713,38 +744,6 @@ class CharacterController {
                 const enemyFacingPlayer = this.isFacing(enemy, player);
                 const playerIsInFront = (enemy.sprite.rotation.y === 0 && player.sprite.position.x > enemy.sprite.position.x) ||
                                         (enemy.sprite.rotation.y === Math.PI && player.sprite.position.x < enemy.sprite.position.x);
-                
-                // Check if returned plate hits dishwasher
-                if (effect.dishType === 'plate' && dishDirection > 0 && effect.wasReturned) {
-                    if (Math.abs(projectilePos.x - enemyBounds.x) < (enemyBounds.width/2 + projectileRadius) &&
-                        Math.abs(projectilePos.y - enemyBounds.y) < (enemyBounds.height/2 + projectileRadius)) {
-                        // Plate hit dishwasher after being returned
-                        this.platesReturned++;
-                        if (window.game && window.game.uiManager) {
-                            window.game.uiManager.updatePlates(this.platesReturned);
-                        }
-                        
-                        // Apply damage and effects
-                        const newHealth = enemy.takeDamage(10, true); // Same damage as fireball
-                        this.attackEffects.createDamageEffect(enemyBounds.x, enemyBounds.y);
-                        
-                        // Check if dishwasher should be destroyed
-                        if (this.platesReturned >= this.maxPlates) {
-                            enemy.health = 0;
-                            if (window.game && window.game.uiManager) {
-                                window.game.uiManager.updateDishwasherHealth(0, enemy.maxHealth);
-                            }
-                            // Show victory message
-                            if (window.game && window.game.uiManager) {
-                                window.game.uiManager.showGameMessage('Dishwasher destroyed!', 3000);
-                            }
-                        }
-                        
-                        this.sceneSetup.scene.remove(effect.mesh);
-                        this.attackEffects.effects.splice(i, 1);
-                        continue;
-                    }
-                }
                 
                 // Check if dish hits player
                 if (dishDirection === (enemy.sprite.rotation.y === 0 ? 1 : -1) &&
@@ -828,17 +827,17 @@ class CharacterController {
                 }
             }
             
+            // Play roar sound when launching fireball
+            if (window.game && window.game.audioManager) {
+                window.game.audioManager.playAttackSound();
+            }
+            
             // Determine direction: 1 for right, -1 for left
             const direction = (player.sprite.rotation.y === 0) ? 1 : -1;
             // Spawn projectile in front of player
             const startX = player.sprite.position.x + direction * (player.width / 2 + 0.3);
             const startY = player.sprite.position.y;
             this.attackEffects.createPlayerAttackEffect(startX, startY, direction);
-            
-            // Play hit sound instead of attack sound
-            if (window.game && window.game.audioManager) {
-                window.game.audioManager.playSound('hit');
-            }
         }
     }
     
@@ -864,6 +863,38 @@ class CharacterController {
             return target.sprite.position.x > attacker.sprite.position.x;
         } else {
             return target.sprite.position.x < attacker.sprite.position.x;
+        }
+    }
+    
+    checkPortalCollision() {
+        const player = this.characters.player;
+        const portal = this.characters.enemy.portalEffect;
+        
+        if (!player || !portal || !portal.isActive) return;
+        
+        // Check if player is close to portal
+        const distance = player.sprite.position.distanceTo(portal.position);
+        if (distance < 2.0) { // Portal collision radius
+            // Play portal sound
+            if (window.game && window.game.audioManager) {
+                window.game.audioManager.playPortalSound();
+            }
+            
+            // Create poof effect at player's position
+            this.poofEffect = new PoofEffect(this.sceneSetup.scene, player.sprite.position);
+            
+            // Remove player sprite
+            this.sceneSetup.scene.remove(player.sprite);
+            if (player.shadow) {
+                this.sceneSetup.scene.remove(player.shadow);
+            }
+            
+            // Show level completion dialog after a short delay
+            setTimeout(() => {
+                if (window.game && window.game.uiManager) {
+                    window.game.uiManager.showLevelCompleteDialog();
+                }
+            }, 500); // 0.5 second delay to show poof effect
         }
     }
 }

@@ -63,7 +63,7 @@ class CollectibleManager {
     platformRemoved() {
         // When a platform is removed, we need to adjust our counts
         this.lastPlatformCount = this.sceneSetup.elevatedPlatforms.length;
-        // console.log('Platform removed. Adjusted lastPlatformCount to:', this.lastPlatformCount);
+        console.log('Platform removed. Adjusted lastPlatformCount to:', this.lastPlatformCount);
     }
     
     spawnOrb(x, y, isOnMovingPlatform = false) {
@@ -151,22 +151,22 @@ class CollectibleManager {
         // Get the current platform count
         const currentPlatformCount = this.sceneSetup.elevatedPlatforms.length;
         
-        // console.log('Checking platforms for orb spawning:');
-        // console.log('Current platform count:', currentPlatformCount);
-        // console.log('Last platform count:', this.lastPlatformCount);
-        // console.log('Total platforms tracked:', this.platformCount);
+        console.log('Checking platforms for orb spawning:');
+        console.log('Current platform count:', currentPlatformCount);
+        console.log('Last platform count:', this.lastPlatformCount);
+        console.log('Total platforms tracked:', this.platformCount);
         
         // Only spawn orbs if we have new platforms
         if (currentPlatformCount > this.lastPlatformCount) {
             // Get the new platforms (the ones that weren't there before)
             const newPlatforms = this.sceneSetup.elevatedPlatforms.slice(this.lastPlatformCount);
-            // console.log('New platforms to process:', newPlatforms.length);
+            console.log('New platforms to process:', newPlatforms.length);
             
             // Spawn orbs on new platforms
             newPlatforms.forEach((platform, index) => {
                 // Calculate the absolute platform number (1-based)
                 const absolutePlatformNumber = this.platformCount + index + 1;
-                // console.log('Processing platform:', absolutePlatformNumber, 'is odd:', absolutePlatformNumber % 2 === 1);
+                console.log('Processing platform:', absolutePlatformNumber, 'is odd:', absolutePlatformNumber % 2 === 1);
                 
                 // Spawn orb on odd-numbered platforms (1st, 3rd, 5th, etc.)
                 if (absolutePlatformNumber % 2 === 1) {
@@ -174,11 +174,11 @@ class CollectibleManager {
                     const isOnMovingPlatform = (this.lastPlatformCount + index) === this.sceneSetup.elevatedPlatforms.length - 1;
                     
                     // Debug platform dimensions
-                    // console.log('Platform dimensions:', {
-                    //     x: platform.x,
-                    //     width: platform.width,
-                    //     isMoving: isOnMovingPlatform
-                    // });
+                    console.log('Platform dimensions:', {
+                        x: platform.x,
+                        width: platform.width,
+                        isMoving: isOnMovingPlatform
+                    });
                     
                     // Calculate x position - center of the platform
                     // For moving platform, adjust the center calculation
@@ -186,7 +186,7 @@ class CollectibleManager {
                         ? platform.x + (platform.width / 2) - 1.5  // Increased leftward offset for moving platform
                         : platform.x + (platform.width / 2);
                     
-                    // console.log('Spawning orb on platform', absolutePlatformNumber, 'at position:', x, platform.y + 0.5);
+                    console.log('Spawning orb on platform', absolutePlatformNumber, 'at position:', x, platform.y + 0.5);
                     this.spawnOrb(x, platform.y + 0.5, isOnMovingPlatform);
                 }
             });
@@ -194,9 +194,9 @@ class CollectibleManager {
             // Update the platform count
             this.platformCount += newPlatforms.length;
             this.lastPlatformCount = currentPlatformCount;
-            // console.log('Updated platform counts - Total:', this.platformCount, 'Last:', this.lastPlatformCount);
+            console.log('Updated platform counts - Total:', this.platformCount, 'Last:', this.lastPlatformCount);
         } else {
-            // console.log('No new platforms to process');
+            console.log('No new platforms to process');
         }
     }
     
@@ -291,14 +291,10 @@ class CollectibleManager {
                     this.movingPlatformOrbs.delete(collectible);
                 }
                 
-                // Play collect sound
-                if (window.game && window.game.audioManager) {
-                    window.game.audioManager.playSound('collect');
-                }
-                
                 // Show quiz panel
                 if (window.game) {
                     window.game.freezeGameLoop();
+                    window.game.audioManager.playBGM(); // Keep BGM playing
                     window.game.quizManager.showQuiz();
                 }
             }

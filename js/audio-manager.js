@@ -1,209 +1,187 @@
-// audio-manager.js - Handles game audio including music and sound effects
-
 class AudioManager {
     constructor() {
-        // Initialize audio context
-        this.audioContext = null;
-        this.sounds = {};
-        this.music = {};
-        this.currentBgm = null;
-        this.isMuted = false;
+        // Create audio elements
+        this.bgm = new Audio('assets/bgm.mp3');
+        this.attackSound = new Audio('assets/roar.mp3');
+        this.dishHitSound = new Audio('assets/dish.mp3');
+        this.answerSound = new Audio('assets/answer.mp3');
+        this.wrongSound = new Audio('assets/wrong.mp3');
+        this.buttonSound = new Audio('assets/button.mp3');
+        this.explosionSound = new Audio('assets/explosion.mp3');
+        this.portalSound = new Audio('assets/portal.mp3');
+
+        // Set BGM to loop
+        this.bgm.loop = true;
+
+        // Set volume levels
+        this.bgm.volume = 0.5; // Background music at 50% volume
+        this.attackSound.volume = 0.7;
+        this.dishHitSound.volume = 0.7;
+        this.answerSound.volume = 0.7;
+        this.wrongSound.volume = 0.7;
+        this.buttonSound.volume = 0.7;
+        this.explosionSound.volume = 0.7;
+        this.portalSound.volume = 0.7;
         
-        // Initialize audio once user has interacted with the page
-        this.setupAudioContext();
+        // Wait for audio to be loaded
+        this.isLoaded = false;
+        this.bgmLoaded = false;
         
-        // console.log('AudioManager initialized');
-    }
-    
-    setupAudioContext() {
-        try {
-            // Create audio context
-            window.AudioContext = window.AudioContext || window.webkitAudioContext;
-            this.audioContext = new AudioContext();
-            
-            // Load game sounds
-            this.loadSounds();
-            
-            // Setup volume controls
-            this.masterGainNode = this.audioContext.createGain();
-            this.masterGainNode.connect(this.audioContext.destination);
-            this.masterGainNode.gain.value = 0.7; // Default volume at 70%
-            
-        } catch (error) {
-            console.error('Web Audio API is not supported in this browser:', error);
-        }
-    }
-    
-    loadSounds() {
-        // Load sound effects
-        this.loadSound('collect', 'assets/audio/collect.mp3');
-        this.loadSound('jump', 'assets/audio/jump.mp3');
-        this.loadSound('hit', 'assets/audio/hit.mp3');
+        // Preload BGM with explicit loading
+        this.bgm.preload = 'auto';
+        this.bgm.load();
         
-        // Load background music
-        this.loadMusic('bgm', 'assets/audio/bgm.mp3');
-    }
-    
-    loadSound(name, url) {
-        fetch(url)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Failed to load sound: ${name}`);
-                }
-                return response.arrayBuffer();
-            })
-            .then(arrayBuffer => this.audioContext.decodeAudioData(arrayBuffer))
-            .then(audioBuffer => {
-                this.sounds[name] = audioBuffer;
-                // console.log(`Sound loaded: ${name}`);
-            })
-            .catch(error => {
-                console.error(`Error loading sound ${name}:`, error);
-            });
-    }
-    
-    loadMusic(name, url) {
-        // Create audio element for background music
-        const audio = new Audio();
-        audio.src = url;
-        audio.loop = true;
-        
-        // Store music without connecting nodes yet
-        this.music[name] = {
-            element: audio,
-            connected: false,
-            source: null,
-            gainNode: null
+        // Wait for BGM to be fully loaded
+        this.bgm.oncanplaythrough = () => {
+            console.log('BGM fully loaded and ready to play');
+            this.bgmLoaded = true;
         };
+
+        // Preload all sound effects
+        const soundEffects = [
+            { name: 'attack', sound: this.attackSound },
+            { name: 'dish hit', sound: this.dishHitSound },
+            { name: 'answer', sound: this.answerSound },
+            { name: 'wrong', sound: this.wrongSound },
+            { name: 'button', sound: this.buttonSound },
+            { name: 'explosion', sound: this.explosionSound },
+            { name: 'portal', sound: this.portalSound }
+        ];
         
-        // console.log(`Music loaded: ${name}`);
+        // Load other sounds with explicit preloading
+        Promise.all(soundEffects.map(({ name, sound }) => {
+            sound.preload = 'auto';
+            sound.load();
+            
+            return new Promise((resolve, reject) => {
+                sound.oncanplaythrough = () => {
+                    console.log(`${name} sound loaded`);
+                    resolve();
+                };
+                sound.onerror = (error) => {
+                    console.error(`Error loading ${name} sound:`, error);
+                    reject(new Error(`Failed to load ${name} sound`));
+                };
+            });
+        })).then(() => {
+            console.log('All sound effects loaded successfully');
+            this.isLoaded = true;
+        }).catch(error => {
+            console.error('Error loading sound effects:', error);
+            // Continue even if some sounds fail to load
+            this.isLoaded = true;
+        });
     }
-    
-    playSound(name) {
-        if (this.isMuted || !this.audioContext || !this.sounds[name]) return;
-        
-        try {
-            // Create sound source
-            const source = this.audioContext.createBufferSource();
-            source.buffer = this.sounds[name];
-            
-            // Connect to master volume
-            source.connect(this.masterGainNode);
-            
-            // Play the sound
-            source.start(0);
-        } catch (error) {
-            console.error(`Error playing sound ${name}:`, error);
+
+    // Wait for BGM to be fully loaded
+    async waitForBGMLoad() {
+        if (this.bgmLoaded) {
+            return true;
         }
+        
+        return new Promise((resolve) => {
+            const checkLoaded = () => {
+                if (this.bgmLoaded) {
+                    resolve(true);
+                } else {
+                    setTimeout(checkLoaded, 100);
+                }
+            };
+            checkLoaded();
+        });
     }
-    
-    playVictorySound() {
-        // Use hit sound instead
-        // this.playSound('hit');
-    }
-    
-    playDefeatSound() {
-        // Use hit sound instead
-        // this.playSound('hit');
-    }
-    
-    playMusic(name) {
-        if (!this.music[name]) {
-            console.warn(`Music not found: ${name}`);
+
+    playBGM() {
+        if (!this.bgmLoaded) {
+            console.log('BGM not loaded yet, waiting...');
             return;
         }
+
+        console.log('Attempting to play BGM...');
+        console.log('BGM element state:', {
+            readyState: this.bgm.readyState,
+            error: this.bgm.error,
+            src: this.bgm.src,
+            volume: this.bgm.volume,
+            muted: this.bgm.muted
+        });
+
+        // Try to play the BGM
+        const playPromise = this.bgm.play();
         
-        // Stop current music if playing
-        this.stopMusic();
-        
-        try {
-            // Resume audio context if suspended
-            if (this.audioContext && this.audioContext.state === 'suspended') {
-                this.audioContext.resume();
-            }
-            
-            // Connect audio nodes if not already connected
-            if (!this.music[name].connected && this.audioContext && this.audioContext.state !== 'closed') {
-                try {
-                    // Create a gain node for this music track
-                    const gainNode = this.audioContext.createGain();
-                    gainNode.gain.value = 0.5; // Set music volume slightly lower than effects
-                    
-                    // Create media element source
-                    const source = this.audioContext.createMediaElementSource(this.music[name].element);
-                    
-                    // Connect source -> gain -> master
-                    source.connect(gainNode);
-                    gainNode.connect(this.masterGainNode);
-                    
-                    // Store references
-                    this.music[name].source = source;
-                    this.music[name].gainNode = gainNode;
-                    this.music[name].connected = true;
-                } catch (error) {
-                    console.error(`Error setting up audio nodes for ${name}:`, error);
-                    // If we fail to connect, we'll just play the audio directly
-                }
-            }
-            
-            // Play the music
-            this.music[name].element.play().catch(error => {
-                console.error(`Error playing music ${name}:`, error);
-            });
-            
-            this.currentBgm = name;
-        } catch (error) {
-            console.error(`Error playing music ${name}:`, error);
-        }
-    }
-    
-    stopMusic() {
-        if (this.currentBgm && this.music[this.currentBgm]) {
-            this.music[this.currentBgm].element.pause();
-            this.music[this.currentBgm].element.currentTime = 0;
-            this.currentBgm = null;
-        }
-    }
-    
-    setMasterVolume(volume) {
-        if (this.masterGainNode) {
-            // Clamp volume between 0 and 1
-            volume = Math.max(0, Math.min(1, volume));
-            this.masterGainNode.gain.value = volume;
-        }
-    }
-    
-    setMusicVolume(volume) {
-        // Set volume for all music tracks
-        for (const key in this.music) {
-            if (this.music[key].gainNode) {
-                volume = Math.max(0, Math.min(1, volume));
-                this.music[key].gainNode.gain.value = volume;
-            } else {
-                this.music[key].element.volume = volume;
-            }
-        }
-    }
-    
-    toggleMute() {
-        this.isMuted = !this.isMuted;
-        
-        if (this.masterGainNode) {
-            this.masterGainNode.gain.value = this.isMuted ? 0 : 0.7;
-        }
-        
-        return this.isMuted;
-    }
-    
-    cleanup() {
-        // Stop all sounds and music
-        this.stopMusic();
-        
-        // Close audio context
-        if (this.audioContext) {
-            this.audioContext.close().catch(error => {
-                console.error('Error closing audio context:', error);
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                console.log('BGM started playing');
+            }).catch(error => {
+                console.error('Error playing BGM:', error);
+                // Try to play again after a short delay
+                setTimeout(() => {
+                    this.bgm.play().catch(e => {
+                        console.error('Second attempt to play BGM failed:', e);
+                    });
+                }, 1000);
             });
         }
+    }
+
+    stopBGM() {
+        this.bgm.pause();
+        this.bgm.currentTime = 0;
+    }
+
+    playAttackSound() {
+        if (!this.isLoaded) return;
+        this.attackSound.currentTime = 0;
+        this.attackSound.play().catch(error => {
+            console.error('Error playing attack sound:', error);
+        });
+    }
+
+    playDishHitSound() {
+        if (!this.isLoaded) return;
+        this.dishHitSound.currentTime = 0;
+        this.dishHitSound.play().catch(error => {
+            console.error('Error playing dish hit sound:', error);
+        });
+    }
+
+    playAnswerSound() {
+        if (!this.isLoaded) return;
+        this.answerSound.currentTime = 0;
+        this.answerSound.play().catch(error => {
+            console.error('Error playing answer sound:', error);
+        });
+    }
+
+    playWrongSound() {
+        if (!this.isLoaded) return;
+        this.wrongSound.currentTime = 0;
+        this.wrongSound.play().catch(error => {
+            console.error('Error playing wrong sound:', error);
+        });
+    }
+
+    playButtonSound() {
+        if (!this.isLoaded) return;
+        this.buttonSound.currentTime = 0;
+        this.buttonSound.play().catch(error => {
+            console.error('Error playing button sound:', error);
+        });
+    }
+
+    playExplosionSound() {
+        if (!this.isLoaded) return;
+        this.explosionSound.currentTime = 0;
+        this.explosionSound.play().catch(error => {
+            console.error('Error playing explosion sound:', error);
+        });
+    }
+
+    playPortalSound() {
+        if (!this.isLoaded) return;
+        this.portalSound.currentTime = 0;
+        this.portalSound.play().catch(error => {
+            console.error('Error playing portal sound:', error);
+        });
     }
 } 
