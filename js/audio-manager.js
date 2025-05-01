@@ -23,6 +23,9 @@ class AudioManager {
         this.explosionSound.volume = 0.7;
         this.portalSound.volume = 0.7;
         
+        // Sound settings
+        this.soundEnabled = true;
+        
         // Wait for audio to be loaded
         this.isLoaded = false;
         this.bgmLoaded = false;
@@ -73,6 +76,18 @@ class AudioManager {
         });
     }
 
+    // Toggle sound on/off
+    toggleSound() {
+        this.soundEnabled = !this.soundEnabled;
+        
+        // If sound is turned off, stop BGM
+        if (!this.soundEnabled && !this.bgm.paused) {
+            this.stopBGM();
+        }
+        
+        return this.soundEnabled;
+    }
+
     // Wait for BGM to be fully loaded
     async waitForBGMLoad() {
         if (this.bgmLoaded) {
@@ -92,8 +107,8 @@ class AudioManager {
     }
 
     playBGM() {
-        if (!this.bgmLoaded) {
-            console.log('BGM not loaded yet, waiting...');
+        if (!this.soundEnabled || !this.bgmLoaded) {
+            console.log('BGM not enabled or not loaded yet');
             return;
         }
 

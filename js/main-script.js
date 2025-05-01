@@ -59,9 +59,8 @@ class Game {
             setTimeout(() => {
                 this.uiManager.hideLoadingScreen();
                 
-                // Start the game loop and play BGM
+                // Start the game loop without playing BGM automatically
                 this.isGameRunning = true;
-                this.audioManager.playBGM();
                 requestAnimationFrame(this.gameLoop.bind(this));
             }, 1000);
             
@@ -281,30 +280,31 @@ class Game {
     
     freezeGameLoop() {
         this.isPaused = true;
-        this.isGameRunning = false;
         this.audioManager.stopBGM();
     }
     
     unfreezeGameLoop() {
         this.isPaused = false;
-        this.isGameRunning = true;
-        this.audioManager.playBGM();
         this.lastTime = performance.now();
-        requestAnimationFrame(this.gameLoop.bind(this));
+        if (!this.isGameRunning) {
+            this.isGameRunning = true;
+            requestAnimationFrame(this.gameLoop.bind(this));
+        }
     }
-
+    
     pauseGame() {
         this.isPaused = true;
-        this.isGameRunning = false;
         this.audioManager.stopBGM();
     }
-
+    
     resumeGame() {
         this.isPaused = false;
-        this.isGameRunning = true;
-        this.audioManager.playBGM();
         this.lastTime = performance.now();
-        requestAnimationFrame(this.gameLoop.bind(this));
+        
+        if (!this.isGameRunning) {
+            this.isGameRunning = true;
+            requestAnimationFrame(this.gameLoop.bind(this));
+        }
     }
 }
 

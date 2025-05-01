@@ -284,17 +284,29 @@ class UIManager {
     }
 
     togglePause() {
-        this.isPaused = !this.isPaused;
-        this.pauseButton.textContent = this.isPaused ? 'PLAY' : 'PAUSE';
-        this.pauseButton.classList.toggle('paused', this.isPaused);
+        if (!window.game) return;
         
-        if (window.game) {
-            if (this.isPaused) {
-                window.game.freezeGameLoop();
-            } else {
-                window.game.unfreezeGameLoop();
+        if (window.game.isPaused) {
+            // Resume game
+            window.game.resumeGame();
+            this.pauseButton.textContent = 'PAUSE';
+            
+            // Resume BGM if sound is enabled
+            if (window.game.audioManager && window.game.audioManager.soundEnabled) {
+                window.game.audioManager.playBGM();
+            }
+        } else {
+            // Pause game
+            window.game.pauseGame();
+            this.pauseButton.textContent = 'PLAY';
+            
+            // Pause BGM
+            if (window.game.audioManager) {
+                window.game.audioManager.stopBGM();
             }
         }
+        
+        this.isPaused = window.game.isPaused;
     }
 
     // Loading screen methods

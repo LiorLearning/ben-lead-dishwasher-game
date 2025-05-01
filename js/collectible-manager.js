@@ -294,7 +294,6 @@ class CollectibleManager {
                 // Show quiz panel
                 if (window.game) {
                     window.game.freezeGameLoop();
-                    window.game.audioManager.playBGM(); // Keep BGM playing
                     window.game.quizManager.showQuiz();
                 }
             }

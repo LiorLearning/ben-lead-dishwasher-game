@@ -564,6 +564,37 @@
                 font-size: 14px;
             }
         }
+
+        /* Sound Toggle Button */
+        #soundToggleButton {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid #FFD700;
+            color: #FFD700;
+            padding: 8px 16px;
+            border-radius: 5px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        #soundToggleButton:hover {
+            background: rgba(0, 0, 0, 0.7);
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 768px) {
+            #soundToggleButton {
+                right: 20px;
+                bottom: 70px;
+                font-size: 12px;
+                padding: 6px 12px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -612,6 +643,9 @@
     </div>
     
     <div id="gameMessage"></div>
+
+    <!-- Sound Toggle Button -->
+    <button id="soundToggleButton">SOUND: ON</button>
 
     <!-- Quiz Panel -->
     <div id="quiz-panel-root" style="display: none;">
@@ -664,6 +698,16 @@
             
             // If game exists, reset and resume it
             if (window.game) {
+                // Play button sound first
+                if (window.game.audioManager) {
+                    window.game.audioManager.playButtonSound();
+                    
+                    // Play BGM with a slight delay after button sound starts
+                    setTimeout(() => {
+                        window.game.audioManager.playBGM();
+                    }, 300);
+                }
+                
                 // Reset game state
                 window.game.isGameRunning = true;
                 window.game.isPaused = false;
@@ -690,6 +734,25 @@
                 introScreen.style.display = 'none';
             }, 500); // Match this with the CSS transition duration
         }
+        
+        // Initialize sound toggle button functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const soundToggleButton = document.getElementById('soundToggleButton');
+            
+            soundToggleButton.addEventListener('click', function() {
+                if (window.game && window.game.audioManager) {
+                    const soundEnabled = window.game.audioManager.toggleSound();
+                    
+                    // Update button text
+                    soundToggleButton.textContent = soundEnabled ? 'SOUND: ON' : 'SOUND: OFF';
+                    
+                    // If sound is enabled and game is running, play BGM
+                    if (soundEnabled && window.game.isGameRunning && !window.game.isPaused) {
+                        window.game.audioManager.playBGM();
+                    }
+                }
+            });
+        });
     </script>
     <button id="pauseButton">PLAY</button>
 </body>
