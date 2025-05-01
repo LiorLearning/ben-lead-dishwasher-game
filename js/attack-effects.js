@@ -77,16 +77,16 @@ class AttackEffects {
 
     createDishTrail(x, y, direction) {
         // Create multiple trail particles with slight variations
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < 5; i++) {
             const offsetX = (Math.random() - 0.5) * 0.2;
             const offsetY = (Math.random() - 0.5) * 0.2;
-            const size = 0.2 + Math.random() * 0.1;
+            const size = 0.3 + Math.random() * 0.15;
             
             const trailMaterial = new THREE.SpriteMaterial({
                 map: this.textures.smoke,
-                color: new THREE.Color(0.5, 0.5, 0.5),
+                color: new THREE.Color(0.6, 0.6, 0.6),
                 transparent: true,
-                opacity: 0.6,
+                opacity: 0.8,
                 blending: THREE.NormalBlending
             });
 
@@ -97,13 +97,13 @@ class AttackEffects {
 
             this.dishTrailParticles.push({
                 mesh: trailSprite,
-                lifetime: 0.4, // Shorter lifetime than fireball trail
+                lifetime: 0.6, // Longer lifetime for more dramatic effect
                 elapsed: 0,
                 startScale: size,
-                startOpacity: 0.6,
+                startOpacity: 0.8,
                 velocity: new THREE.Vector2(
-                    (6 + Math.random() * 2) * direction, // Slightly random speed
-                    (Math.random() - 0.5) * 0.5 // Small vertical movement
+                    (8 + Math.random() * 3) * direction, // Faster speed
+                    (Math.random() - 0.5) * 0.8 // More vertical movement
                 )
             });
         }
@@ -181,11 +181,11 @@ class AttackEffects {
 
     createDamageEffect(x, y) {
         // Create a damage flash effect
-        const geometry = new THREE.CircleGeometry(0.5, 16);
+        const geometry = new THREE.CircleGeometry(0.8, 16);
         const material = new THREE.MeshBasicMaterial({
             color: 0xff0000,
             transparent: true,
-            opacity: 0.6
+            opacity: 0.8
         });
         const damageFlash = new THREE.Mesh(geometry, material);
         damageFlash.position.set(x, y, 0);
@@ -194,7 +194,7 @@ class AttackEffects {
         // Add to effects array
         this.effects.push({
             mesh: damageFlash,
-            lifetime: 0.3,
+            lifetime: 0.5,
             elapsed: 0,
             scaleDown: true
         });

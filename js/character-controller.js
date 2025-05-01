@@ -373,12 +373,13 @@ class CharacterController {
         this.enemyAttackTimer = 0;
         this.enemyAttackInterval = 2.0;
         
-        // Enemy following properties
-        this.minSafeDistance = 5; // Minimum safe distance from player
-        this.maxSafeDistance = 10; // Maximum safe distance from player
-        this.currentTargetDistance = this.getRandomSafeDistance();
+        // Enemy movement properties
+        this.movingToCenter = false; // Start by moving from right to center
+        this.centerPosition = 0; // Center of screen X position
+        this.rightPosition = 6; // Right side X position
         this.distanceChangeTimer = 0;
-        this.distanceChangeInterval = 3.0; // Change distance every 3 seconds
+        this.distanceChangeInterval = 3.0; // Change position every 3 seconds
+        this.enemyHorizontalSpeed = 2.0; // Speed of horizontal movement
         
         // Enemy jump tracking
         this.enemyJumpCooldown = 0;
@@ -623,21 +624,36 @@ class CharacterController {
             }
         }
         
-        if (this.characters.enemy) {
-            // Update enemy position to follow player with time lag
+        if (this.characters.enemy && !this.characters.enemy.isDefeated) {
             const player = this.characters.player;
             const enemy = this.characters.enemy;
             
-            // Update target distance periodically
+            // Update timer for position change
             this.distanceChangeTimer += delta;
             if (this.distanceChangeTimer >= this.distanceChangeInterval) {
-                this.currentTargetDistance = this.getRandomSafeDistance();
+                this.movingToCenter = !this.movingToCenter;
                 this.distanceChangeTimer = 0;
+                
+                // Play a sound when changing direction (optional)
+                if (window.game && window.game.audioManager && window.game.audioManager.playWhooshSound) {
+                    window.game.audioManager.playWhooshSound();
+                }
             }
             
-            // Calculate target position with random but safe distance
-            const targetX = player.sprite.position.x + this.currentTargetDistance;
-            const targetY = player.sprite.position.y; // Target same height as player
+            // Determine target position in world space (fixed screen positions)
+            const targetX = this.movingToCenter ? this.centerPosition : this.rightPosition;
+            
+            // Move enemy horizontally toward target position
+            const distanceToTarget = targetX - enemy.sprite.position.x;
+            if (Math.abs(distanceToTarget) > 0.1) {
+                const direction = distanceToTarget > 0 ? 1 : -1;
+                enemy.sprite.position.x += direction * this.enemyHorizontalSpeed * delta;
+            }
+            
+            // Track player's vertical position
+            const targetY = player.sprite.position.y;
+            const verticalLag = enemy.isGrounded ? 0.1 : 0.05;
+            enemy.sprite.position.y += (targetY - enemy.sprite.position.y) * verticalLag;
             
             // Check if we should make the enemy jump
             const currentTime = performance.now() / 1000;
@@ -648,11 +664,7 @@ class CharacterController {
             const randomDelay = this.enemyJumpDelay + 
                 (Math.random() * 2 - 1) * this.enemyJumpDelayVariation;
             
-            // Only attempt jump if:
-            // 1. Enough time has passed since player's jump
-            // 2. Enough time has passed since enemy's last jump
-            // 3. Enemy is not on cooldown
-            // 4. Random chance succeeds
+            // Only attempt jump if conditions are met
             if (timeSincePlayerJump >= randomDelay && 
                 timeSinceEnemyJump >= this.enemyJumpMinInterval && 
                 this.enemyJumpCooldown <= 0 &&
@@ -664,17 +676,6 @@ class CharacterController {
                     this.enemyLastJumpTime = currentTime;
                     this.enemyJumpCooldown = this.enemyJumpMinInterval;
                 }
-            }
-            
-            // Apply smooth vertical following with time lag
-            const verticalLag = enemy.isGrounded ? 0.1 : 0.05; // Less lag when in air
-            enemy.sprite.position.y += (targetY - enemy.sprite.position.y) * verticalLag;
-            
-            // Move enemy horizontally to maintain random distance
-            const horizontalSpeed = 3; // Speed of horizontal movement
-            if (Math.abs(enemy.sprite.position.x - targetX) > 0.1) {
-                const direction = targetX > enemy.sprite.position.x ? 1 : -1;
-                enemy.sprite.position.x += direction * horizontalSpeed * delta;
             }
             
             // Make characters face each other
@@ -752,7 +753,7 @@ class CharacterController {
                     Math.abs(projectilePos.x - playerBounds.x) < (playerBounds.width/2 + projectileRadius) &&
                     Math.abs(projectilePos.y - playerBounds.y) < (playerBounds.height/2 + projectileRadius)) {
                     // Player got hit - take damage
-                    const newHealth = player.takeDamage(5);
+                    const newHealth = player.takeDamage(20);
                     this.attackEffects.createDamageEffect(playerBounds.x, playerBounds.y);
                     if (window.game && window.game.uiManager) {
                         window.game.uiManager.updateTigerHealth(newHealth, player.maxHealth);

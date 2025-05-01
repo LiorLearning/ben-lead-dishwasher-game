@@ -34,25 +34,15 @@ class QuizManager {
     }
     
     generateQuestion() {
-        const operations = ['+', '-', '×'];
+        const operations = ['×'];
         const operation = operations[Math.floor(Math.random() * operations.length)];
         
         let num1, num2, answer;
         
         switch (operation) {
-            case '+':
-                num1 = Math.floor(Math.random() * 20) + 1;
-                num2 = Math.floor(Math.random() * 20) + 1;
-                answer = num1 + num2;
-                break;
-            case '-':
-                num1 = Math.floor(Math.random() * 20) + 1;
-                num2 = Math.floor(Math.random() * num1) + 1;
-                answer = num1 - num2;
-                break;
             case '×':
-                num1 = Math.floor(Math.random() * 12) + 1;
-                num2 = Math.floor(Math.random() * 12) + 1;
+                num1 = Math.floor(Math.random() * 7) + 3; // Single digit (1-9)
+                num2 = Math.floor(Math.random() * 7) + 3; // Single digit (1-9)
                 answer = num1 * num2;
                 break;
         }
@@ -78,7 +68,6 @@ class QuizManager {
             correctAnswer: answer
         };
     }
-    
     showQuestion() {
         if (this.currentQuestion >= this.questions.length) {
             this.completeQuiz();
