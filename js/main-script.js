@@ -144,7 +144,7 @@ class Game {
                         // console.log('Victory condition met - Enemy health:', enemy.health);
                         this.isGameRunning = false;
                         this.uiManager.showVictory();
-                        this.audioManager.playVictorySound();
+                        // this.audioManager.playVictorySound();
                         return;
                     }
                     

@@ -405,7 +405,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            z-index: 1000;
+            z-index: 2000;
             pointer-events: none;
         }
 
@@ -595,6 +595,15 @@
                 // Initialize your game here
                 if (typeof initGame === 'function') {
                     initGame();
+                } else {
+                    // Create the game instance if it doesn't exist
+                    if (!window.game) {
+                        window.game = new Game();
+                    }
+                    // Play background music
+                    if (window.game && window.game.audioManager) {
+                        window.game.audioManager.playMusic('bgm');
+                    }
                 }
             }, 500); // Match this with the CSS transition duration
         }
