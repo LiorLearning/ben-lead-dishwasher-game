@@ -126,8 +126,11 @@ var Piglin = /*#__PURE__*/ function() {
                 }
                 var piglinTexture = assetLoader === null || assetLoader === void 0 ? void 0 : assetLoader.getAsset('piglin');
                 if (piglinTexture) {
-                    var piglinWidth = this.width * 1.5;
-                    var piglinHeight = this.height * 1.6;
+                    // Use original dimensions and scale down proportionally
+                    var scale = 0.3; // Scale factor to make it fit in the game
+                    var piglinWidth = piglinTexture.width * scale;
+                    var piglinHeight = piglinTexture.height * scale;
+                    
                     var piglinX = screenX - (piglinWidth - this.width) / 2;
                     var piglinY = this.y - (piglinHeight - this.height);
                     ctx.save();

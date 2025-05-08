@@ -20,7 +20,7 @@ class WelcomeScreen {
             y: CANVAS_HEIGHT / 2 + 80,
             width: 200,
             height: 40,
-            text: "CREDITS: SANDRO",
+            text: "CREDITS: BEN",
             hovered: false
         };
 
@@ -103,16 +103,16 @@ class WelcomeScreen {
         ctx.shadowColor = '#ff4400';
         ctx.shadowBlur = 20 + Math.sin(time * 2) * 5;
         ctx.fillStyle = '#ff6622';
-        ctx.font = 'bold 64px "Press Start 2P", monospace';
+        ctx.font = 'bold 54px "Press Start 2P", monospace';
         ctx.textAlign = 'center';
-        ctx.fillText('PIGLIN PANIC', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 3);
+        ctx.fillText('TIGER vs MINI TOASTERS', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 3);
 
         // Subtitle
         ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
         ctx.shadowBlur = 10;
         ctx.fillStyle = '#cccccc';
         ctx.font = '24px "Press Start 2P", monospace';
-        ctx.fillText('Craft fast or burn slow', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 3 + 50);
+        ctx.fillText('Craft the mighty spear to defeat the Mega Toaster', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 3 + 50);
 
         ctx.restore();
 

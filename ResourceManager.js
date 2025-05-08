@@ -70,12 +70,16 @@ export var ResourceManager = /*#__PURE__*/ function() {
         _class_call_check(this, ResourceManager);
         this.game = game;
         this.resources = {
-            goldNuggets: 0 // Only tracking gold nuggets
+            wood: 0,
+            metal: 0,
+            blueFlame: 0
         };
-        // Simplified crafting requirements
+        // Crafting requirements for mighty spear
         this.craftingRequirements = {
-            goldenBoots: {
-                goldNuggets: 36 // Only craft golden boots with 36 nuggets
+            mightySpear: {
+                wood: 5,
+                metal: 3,
+                blueFlame: 2
             }
         };
         // For tracking highlighted resources in UI
@@ -105,27 +109,12 @@ export var ResourceManager = /*#__PURE__*/ function() {
         {
             key: "addResource",
             value: function addResource(type, amount) {
-                if (!this.resources.hasOwnProperty(type)) {
-                    console.warn("Resource type ".concat(type, " doesn't exist"));
-                    return false;
+                if (this.resources[type] !== undefined) {
+                    this.resources[type] += amount;
+                    this.highlightResource(type);
+                    return true;
                 }
-                this.resources[type] += amount;
-                this.highlightResource(type);
-                // Create floating text animation
-                var text = "+".concat(amount, " ").concat(type);
-                var playerX = this.game.player.x;
-                var playerY = this.game.player.y - 20;
-                this.game.floatingTexts.push(new FloatingText(text, playerX, playerY));
-                // Play collect sound with slight random pitch variation for variety
-                var pitchVariation = 0.9 + Math.random() * 0.2;
-                this.game.audioManager.play('collect', 0.7 * pitchVariation);
-                // Update crafting panel
-                if (this.game.craftingPanel) {
-                    this.game.craftingPanel.updateResources(this.resources);
-                }
-                // Check if bow can be crafted
-                this.checkCraftingAvailability('bow');
-                return true;
+                return false;
             }
         },
         {
@@ -265,7 +254,9 @@ export var ResourceManager = /*#__PURE__*/ function() {
             key: "getResourceColor",
             value: function getResourceColor(type) {
                 var resourceColors = {
-                    goldNuggets: '#FFD700' // Gold
+                    wood: '#8B4513',    // Brown
+                    metal: '#A9A9A9',   // Gray
+                    blueFlame: '#00BFFF' // Deep Sky Blue
                 };
                 return resourceColors[type] || 'white';
             }

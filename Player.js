@@ -31,6 +31,7 @@ function _define_property(obj, key, value) {
     return obj;
 }
 import { GRAVITY, GROUND_LEVEL } from './constants.js';
+import Spear from './Spear.js';
 var Player = /*#__PURE__*/ function() {
     "use strict";
     function Player(x, y) {
@@ -59,6 +60,11 @@ var Player = /*#__PURE__*/ function() {
         this.immunityTimer = 0;
         this.hasShovel = true; // Player starts with a shovel
         this.hasGoldenBoots = false; // Track golden boots status
+        this.spears = []; // Array to store active spears
+        this.lastSpearTime = 0; // Track last spear throw time
+        this.spearCooldown = 500; // Cooldown between spear throws in milliseconds
+        this.breathingOffset = 0; // Track breathing animation offset
+        this.breathingSpeed = 0.02; // Speed of breathing animation
     }
     _create_class(Player, [
         {
@@ -96,6 +102,27 @@ var Player = /*#__PURE__*/ function() {
             }
         },
         {
+            key: "throwSpear",
+            value: function throwSpear() {
+                const currentTime = Date.now();
+                if (currentTime - this.lastSpearTime < this.spearCooldown) return;
+                
+                // Calculate spear position from center of tiger
+                const spearX = this.x + this.width / 2;
+                const spearY = this.y + this.height / 2;
+                
+                // Error handling for invalid positions
+                if (spearX < 0 || spearY < 0) {
+                    console.error('Invalid spear launch position:', { spearX, spearY });
+                    return;
+                }
+                
+                // Create new spear with correct position and direction
+                this.spears.push(new Spear(spearX, spearY, this.facingRight ? 1 : -1));
+                this.lastSpearTime = currentTime;
+            }
+        },
+        {
             key: "update",
             value: function update(deltaTime, world) {
                 // Store previous position for platform collision detection
@@ -105,6 +132,14 @@ var Player = /*#__PURE__*/ function() {
                 // Update position
                 this.x += this.velocityX;
                 this.y += this.velocityY;
+
+                // Update breathing animation when stationary
+                if (Math.abs(this.velocityX) < 0.1 && !this.isJumping) {
+                    this.breathingOffset = Math.sin(Date.now() * this.breathingSpeed) * 1.5;
+                } else {
+                    this.breathingOffset = 0;
+                }
+
                 // Update hit effect if active
                 if (this.isHit) {
                     this.hitTimer += deltaTime;
@@ -147,6 +182,14 @@ var Player = /*#__PURE__*/ function() {
                     this.isJumping = false;
                     this.hasDoubleJumped = false;
                 }
+                // Update spears
+                for (var i = this.spears.length - 1; i >= 0; i--) {
+                    this.spears[i].update();
+                    // Remove spears that are off screen
+                    if (this.spears[i].x < 0 || this.spears[i].x > world.levelWidth) {
+                        this.spears.splice(i, 1);
+                    }
+                }
             }
         },
         {
@@ -165,8 +208,8 @@ var Player = /*#__PURE__*/ function() {
             key: "render",
             value: function render(ctx, screenX) {
                 var _this_game_assetLoader, _this_game;
-                // Get Dave texture
-                var daveTexture = (_this_game = this.game) === null || _this_game === void 0 ? void 0 : (_this_game_assetLoader = _this_game.assetLoader) === null || _this_game_assetLoader === void 0 ? void 0 : _this_game_assetLoader.getAsset('dave minecraft');
+                // Get character texture
+                var characterTexture = (_this_game = this.game) === null || _this_game === void 0 ? void 0 : (_this_game_assetLoader = _this_game.assetLoader) === null || _this_game_assetLoader === void 0 ? void 0 : _this_game_assetLoader.getAsset('minecraft');
                 // Determine if we should show hit flash or immunity flash
                 var showHitEffect = this.isHit && this.showFlash;
                 var showImmuneEffect = this.isImmune && Math.floor(Date.now() / 150) % 2 === 0;
@@ -174,8 +217,8 @@ var Player = /*#__PURE__*/ function() {
                 if (showHitEffect || showImmuneEffect) {
                     ctx.globalAlpha = showHitEffect ? 0.7 : 0.5;
                 }
-                if (daveTexture) {
-                    this.renderDaveSprite(ctx, screenX, daveTexture);
+                if (characterTexture) {
+                    this.renderDaveSprite(ctx, screenX, characterTexture);
                 } else {
                     this.renderFallbackCharacter(ctx, screenX, showHitEffect);
                 }
@@ -194,17 +237,25 @@ var Player = /*#__PURE__*/ function() {
                 if (this.hasShovel) {
                     this.renderShovel(ctx, screenX);
                 }
+                // Render spears
+                this.spears.forEach(function(spear) {
+                    spear.render(ctx, screenX);
+                });
             }
         },
         {
             key: "renderDaveSprite",
             value: function renderDaveSprite(ctx, screenX, daveTexture) {
                 var _this_game_assetLoader, _this_game;
-                var daveWidth = this.width * 1.5;
-                var daveHeight = this.height * 1.8;
+                // Calculate dimensions while maintaining aspect ratio
+                var aspectRatio = daveTexture.width / daveTexture.height;
+                var daveHeight = this.height * 1.5; // Base height
+                var daveWidth = daveHeight * aspectRatio; // Width based on aspect ratio
+                
                 // Calculate Dave position (centered)
                 var daveX = screenX - (daveWidth - this.width) / 2;
                 var daveY = this.y - (daveHeight - this.height) + 5; // Adjust position to match feet
+                
                 // Save context for transformations
                 ctx.save();
                 // Center point for transformations
@@ -220,6 +271,9 @@ var Player = /*#__PURE__*/ function() {
                 if (Math.abs(this.velocityX) > 0.1) {
                     var bobAmount = Math.sin(Date.now() / 150) * 1.5;
                     ctx.translate(0, bobAmount);
+                } else {
+                    // Apply breathing animation when stationary
+                    ctx.translate(0, this.breathingOffset);
                 }
                 // Apply jumping/falling animation
                 if (this.isJumping) {

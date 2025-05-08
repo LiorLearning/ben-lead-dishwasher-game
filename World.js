@@ -31,7 +31,7 @@ var World = /*#__PURE__*/ function() {
         this.levelWidth = 4000; // Extended level width for more platforming
         this.items = [];
         this.platforms = [];
-        this.zombies = []; // Array to hold zombie enemies
+        this.toasters = []; // Array to hold toaster enemies
         this.miningSpots = []; // Array to hold mining spots
         this.cameraOffset = 0; // Add camera offset property
         this.generateLevel();
@@ -51,8 +51,8 @@ var World = /*#__PURE__*/ function() {
                 this.generatePlatforms();
                 // Generate resources
                 this.generateResources();
-                // Generate zombies
-                this.generateZombies();
+                // Generate toasters
+                this.generateToasters();
                 this.generateLavaPits();
             }
         },
@@ -163,8 +163,11 @@ var World = /*#__PURE__*/ function() {
                     // Skip the ground platform (index 0)
                     if (index === 0) return;
 
-                    // Use gold nuggets instead of gold blocks
-                    const resourceType = 'gold nugget';
+                    // Define possible resource types
+                    const resourceTypes = ['wood', 'metal', 'blueFlame'];
+                    
+                    // Randomly select a resource type
+                    const resourceType = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
 
                     // Position mining spot near the platform
                     const miningSpot = new MiningSpot(
@@ -174,11 +177,10 @@ var World = /*#__PURE__*/ function() {
                     );
                     this.miningSpots.push(miningSpot);
 
-                    // Add a zombie to guard this mining spot if it doesn't already have one
-                    // Check if there's already a zombie guarding this platform
+                    // Add a toaster to guard this mining spot if it doesn't already have one
                     let hasGuard = false;
-                    for (const zombie of this.zombies) {
-                        if (zombie.platform === platform) {
+                    for (const toaster of this.toasters) {
+                        if (toaster.platform === platform) {
                             hasGuard = true;
                             break;
                         }
@@ -188,7 +190,7 @@ var World = /*#__PURE__*/ function() {
                     if (!hasGuard) {
                         const patrolStart = platform.x + 20;
                         const patrolEnd = platform.x + platform.width - 20;
-                        this.zombies.push(new Zombie(
+                        this.toasters.push(new Zombie(
                             platform.x + platform.width / 2,
                             patrolStart,
                             patrolEnd,
@@ -199,11 +201,11 @@ var World = /*#__PURE__*/ function() {
             }
         },
         {
-            key: "generateZombies",
-            value: function generateZombies() {
+            key: "generateToasters",
+            value: function generateToasters() {
                 var _this = this;
-                // Add zombies at different locations along the level
-                var zombiePositions = [
+                // Add toasters at different locations along the level
+                var toasterPositions = [
                     {
                         x: 400,
                         patrolStart: 300,
@@ -235,13 +237,13 @@ var World = /*#__PURE__*/ function() {
                         patrolEnd: 3550
                     }
                 ];
-                // Create zombie instances on ground level
-                zombiePositions.forEach(function(param) {
+                // Create toaster instances on ground level
+                toasterPositions.forEach(function(param) {
                     var x = param.x, patrolStart = param.patrolStart, patrolEnd = param.patrolEnd;
-                    _this.zombies.push(new Zombie(x, patrolStart, patrolEnd));
+                    _this.toasters.push(new Zombie(x, patrolStart, patrolEnd));
                 });
-                // Add zombies on platforms to make them more challenging
-                var platformZombies = [
+                // Add toasters on platforms to make them more challenging
+                var platformToasters = [
                     {
                         platformIndex: 1,
                         patrolOffset: 20
@@ -263,14 +265,14 @@ var World = /*#__PURE__*/ function() {
                         patrolOffset: 20
                     }
                 ];
-                platformZombies.forEach(function(param) {
+                platformToasters.forEach(function(param) {
                     var platformIndex = param.platformIndex, patrolOffset = param.patrolOffset;
                     if (platformIndex < _this.platforms.length) {
                         var platform = _this.platforms[platformIndex];
                         var x = platform.x + platform.width / 2;
                         var patrolStart = platform.x + patrolOffset;
                         var patrolEnd = platform.x + platform.width - patrolOffset;
-                        _this.zombies.push(new Zombie(x, patrolStart, patrolEnd, platform));
+                        _this.toasters.push(new Zombie(x, patrolStart, patrolEnd, platform));
                     }
                 });
             }
@@ -311,21 +313,21 @@ var World = /*#__PURE__*/ function() {
             }
         },
         {
-            key: "checkZombieCollisions",
-            value: function checkZombieCollisions(player) {
+            key: "checkToasterCollisions",
+            value: function checkToasterCollisions(player) {
                 var playerBounds = player.getBounds();
                 var playerX = player.x;
                 var visibilityThreshold = CANVAS_WIDTH * 1.5; // Slightly larger than screen
                 var _iteratorNormalCompletion = true, _didIteratorError = false, _iteratorError = undefined;
                 try {
-                    // Only check zombies that are close to the player
-                    for(var _iterator = this.zombies[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true){
-                        var zombie = _step.value;
-                        // Skip zombies that are too far away (broad phase)
-                        if (Math.abs(zombie.x - playerX) > visibilityThreshold) continue;
-                        // Only do precise collision checks for nearby zombies (narrow phase)
-                        if (zombie.checkCollision(player)) {
-                            return zombie;
+                    // Only check toasters that are close to the player
+                    for(var _iterator = this.toasters[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true){
+                        var toaster = _step.value;
+                        // Skip toasters that are too far away (broad phase)
+                        if (Math.abs(toaster.x - playerX) > visibilityThreshold) continue;
+                        // Only do precise collision checks for nearby toasters (narrow phase)
+                        if (toaster.checkCollision(player)) {
+                            return toaster;
                         }
                     }
                 } catch (err) {
@@ -403,14 +405,14 @@ var World = /*#__PURE__*/ function() {
             }
         },
         {
-            key: "updateZombies",
-            value: function updateZombies(deltaTime) {
+            key: "updateToasters",
+            value: function updateToasters(deltaTime) {
                 var _iteratorNormalCompletion = true, _didIteratorError = false, _iteratorError = undefined;
                 try {
-                    // Update all zombies
-                    for(var _iterator = this.zombies[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true){
-                        var zombie = _step.value;
-                        zombie.update(deltaTime);
+                    // Update all toasters
+                    for(var _iterator = this.toasters[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true){
+                        var toaster = _step.value;
+                        toaster.update(deltaTime);
                     }
                 } catch (err) {
                     _didIteratorError = true;
@@ -545,45 +547,33 @@ var World = /*#__PURE__*/ function() {
                 }
                 var _iteratorNormalCompletion3 = true, _didIteratorError3 = false, _iteratorError3 = undefined;
                 try {
-                    // Draw mining spots with gold blocks
+                    // Draw mining spots with resources
                     for(var _iterator3 = this.items[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true){
                         var item = _step3.value;
                         var screenX1 = item.x - cameraOffset;
                         // Only draw if visible on screen
                         if (screenX1 > -item.width && screenX1 < CANVAS_WIDTH) {
-                            if (item.type === 'gold nugget') {
-                                this.drawGoldNugget(ctx, screenX1, item.y);
-                            } else if (item.type === 'gold block') {
-                                // Draw gold block texture with proper Minecraft-style shading
-                                var goldTexture = this.assetLoader.getAsset('gold block');
-                                var blockWidth = 40;
-                                var blockHeight = 40;
-                                if (goldTexture) {
-                                    // Main block
-                                    ctx.drawImage(goldTexture, screenX1, item.y, blockWidth, blockHeight);
-                                    // Top highlight
-                                    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-                                    ctx.fillRect(screenX1, item.y, blockWidth, 5);
-                                    // Side shadow
-                                    ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
-                                    ctx.fillRect(screenX1, item.y + 5, 5, blockHeight - 5);
-                                } else {
-                                    // Fallback gold block
-                                    ctx.fillStyle = '#FFD700';
-                                    ctx.fillRect(screenX1, item.y, blockWidth, blockHeight);
-                                    // Top highlight
-                                    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-                                    ctx.fillRect(screenX1, item.y, blockWidth, 5);
-                                    // Side shadow
-                                    ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
-                                    ctx.fillRect(screenX1, item.y + 5, 5, blockHeight - 5);
-                                }
-                            }
-                            // Draw label if needed
-                            if (item.type) {
-                                ctx.fillStyle = 'white';
-                                ctx.font = '12px Arial';
-                                ctx.fillText(item.type, screenX1, item.y - 5);
+                            if (item.image) {
+                                // Draw the resource image
+                                ctx.drawImage(item.image, screenX1, item.y, item.width, item.height);
+                                
+                                // Add a subtle glow effect
+                                ctx.save();
+                                ctx.globalAlpha = 0.3;
+                                ctx.shadowColor = this.getResourceGlowColor(item.type);
+                                ctx.shadowBlur = 10;
+                                ctx.drawImage(item.image, screenX1, item.y, item.width, item.height);
+                                ctx.restore();
+                            } else {
+                                // Fallback if image isn't loaded
+                                ctx.fillStyle = this.getResourceColor(item.type);
+                                ctx.fillRect(screenX1, item.y, item.width, item.height);
+                                
+                                // Add shading for 3D effect
+                                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                                ctx.fillRect(screenX1, item.y, item.width, 5);
+                                ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                                ctx.fillRect(screenX1, item.y + 5, 5, item.height - 5);
                             }
                         }
                     }
@@ -603,10 +593,10 @@ var World = /*#__PURE__*/ function() {
                 }
                 var _iteratorNormalCompletion4 = true, _didIteratorError4 = false, _iteratorError4 = undefined;
                 try {
-                    // Render zombies
-                    for(var _iterator4 = this.zombies[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true){
-                        var zombie = _step4.value;
-                        zombie.render(ctx, cameraOffset, this.assetLoader);
+                    // Render toasters
+                    for(var _iterator4 = this.toasters[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true){
+                        var toaster = _step4.value;
+                        toaster.render(ctx, cameraOffset, this.assetLoader);
                     }
                 } catch (err) {
                     _didIteratorError4 = true;
@@ -953,6 +943,57 @@ var World = /*#__PURE__*/ function() {
                 }
                 
                 return false;
+            }
+        },
+        {
+            key: "drawResource",
+            value: function drawResource(ctx, x, y, type) {
+                const resourceSize = 20;
+                const texture = this.assetLoader.getAsset(type);
+                
+                if (texture) {
+                    ctx.drawImage(texture, x, y, resourceSize, resourceSize);
+                    
+                    // Add a subtle glow effect
+                    ctx.save();
+                    ctx.globalAlpha = 0.3;
+                    ctx.shadowColor = this.getResourceGlowColor(type);
+                    ctx.shadowBlur = 10;
+                    ctx.drawImage(texture, x, y, resourceSize, resourceSize);
+                    ctx.restore();
+                } else {
+                    // Fallback if texture isn't loaded
+                    ctx.fillStyle = this.getResourceColor(type);
+                    ctx.fillRect(x, y, resourceSize, resourceSize);
+                    
+                    // Add shading for 3D effect
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                    ctx.fillRect(x, y, resourceSize, 5);
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                    ctx.fillRect(x, y + 5, 5, resourceSize - 5);
+                }
+            }
+        },
+        {
+            key: "getResourceGlowColor",
+            value: function getResourceGlowColor(type) {
+                const glowColors = {
+                    wood: '#8B4513',    // Brown
+                    metal: '#A9A9A9',   // Gray
+                    blueFlame: '#00BFFF' // Deep Sky Blue
+                };
+                return glowColors[type] || '#FFFFFF';
+            }
+        },
+        {
+            key: "getResourceColor",
+            value: function getResourceColor(type) {
+                const colors = {
+                    wood: '#8B4513',    // Brown
+                    metal: '#A9A9A9',   // Gray
+                    blueFlame: '#00BFFF' // Deep Sky Blue
+                };
+                return colors[type] || '#FFFFFF';
             }
         }
     ]);

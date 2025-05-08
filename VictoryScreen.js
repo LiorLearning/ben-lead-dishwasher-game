@@ -8,21 +8,21 @@ class VictoryScreen {
         this.initEmbers();
         
         // Button properties with pixel-art styling
-        this.replayButton = {
+        this.playAgainButton = {
             x: CANVAS_WIDTH / 2 - 120,
             y: CANVAS_HEIGHT * 0.75,
-            width: 100,
+            width: 120,
             height: 40,
-            text: "⏩ REPLAY",
+            text: "Play Again",
             hovered: false
         };
         
-        this.menuButton = {
+        this.megaToasterButton = {
             x: CANVAS_WIDTH / 2 + 20,
             y: CANVAS_HEIGHT * 0.75,
-            width: 100,
+            width: 120,
             height: 40,
-            text: "📋 MENU",
+            text: "Face Mega Toaster",
             hovered: false
         };
 
@@ -84,8 +84,8 @@ class VictoryScreen {
         const mouseX = (event.clientX - rect.left) * (this.game.canvas.width / rect.width);
         const mouseY = (event.clientY - rect.top) * (this.game.canvas.height / rect.height);
         
-        this.replayButton.hovered = this.isPointInButton(mouseX, mouseY, this.replayButton);
-        this.menuButton.hovered = this.isPointInButton(mouseX, mouseY, this.menuButton);
+        this.playAgainButton.hovered = this.isPointInButton(mouseX, mouseY, this.playAgainButton);
+        this.megaToasterButton.hovered = this.isPointInButton(mouseX, mouseY, this.megaToasterButton);
     }
 
     handleClick(event) {
@@ -94,10 +94,11 @@ class VictoryScreen {
         const mouseX = (event.clientX - rect.left) * (this.game.canvas.width / rect.width);
         const mouseY = (event.clientY - rect.top) * (this.game.canvas.height / rect.height);
 
-        if (this.isPointInButton(mouseX, mouseY, this.replayButton)) {
+        if (this.isPointInButton(mouseX, mouseY, this.playAgainButton)) {
             this.restartGame();
-        } else if (this.isPointInButton(mouseX, mouseY, this.menuButton)) {
-            this.returnToMenu();
+        } else if (this.isPointInButton(mouseX, mouseY, this.megaToasterButton)) {
+            // TODO: Replace with actual URL when provided
+            window.location.href = 'https://example.com/mega-toaster';
         }
     }
 
@@ -109,10 +110,11 @@ class VictoryScreen {
         const touchX = (touch.clientX - rect.left) * (this.game.canvas.width / rect.width);
         const touchY = (touch.clientY - rect.top) * (this.game.canvas.height / rect.height);
 
-        if (this.isPointInButton(touchX, touchY, this.replayButton)) {
+        if (this.isPointInButton(touchX, touchY, this.playAgainButton)) {
             this.restartGame();
-        } else if (this.isPointInButton(touchX, touchY, this.menuButton)) {
-            this.returnToMenu();
+        } else if (this.isPointInButton(touchX, touchY, this.megaToasterButton)) {
+            // TODO: Replace with actual URL when provided
+            window.location.href = 'https://example.com/mega-toaster';
         }
     }
 
@@ -133,15 +135,13 @@ class VictoryScreen {
     restartGame() {
         this.hide();
         this.game.resources = {
-            sticks: 0,
-            strings: 0,
-            flint: 0,
-            feather: 0,
-            goldNuggets: 0
+            wood: 0,
+            metal: 0,
+            blueFlame: 0
         };
         this.game.player.x = 100;
         this.game.player.y = 375;
-        this.game.player.hasGoldenBoots = false;
+        this.game.player.hasMightySpear = false;
         this.game.cameraOffset = 0;
         this.game.craftingPanel.updateResources(this.game.resources);
         this.game.gameState = GAME_STATE.PLAYING;
@@ -224,36 +224,23 @@ class VictoryScreen {
         ctx.fillStyle = '#ff6622';
         ctx.font = 'bold 48px "Press Start 2P", monospace';
         ctx.textAlign = 'center';
-        ctx.fillText('🔥 Level 2 Complete! 🔥', CANVAS_WIDTH / 2, titleY);
+        ctx.fillText('Mighty Spear Created', CANVAS_WIDTH / 2, titleY);
 
-        // Story text with fade-in and floating effect
-        const storyY = CANVAS_HEIGHT * 0.45;
-        const floatOffset = Math.sin(time * 2) * 3;
-        
-        ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
-        ctx.shadowBlur = 10;
-        ctx.fillStyle = '#cccccc';
-        ctx.font = '16px "Press Start 2P", monospace';
-        ctx.fillText('Steve crafted the boots.', CANVAS_WIDTH / 2, storyY + floatOffset);
-        ctx.fillText('The Piglins retreated.', CANVAS_WIDTH / 2, storyY + 30 + floatOffset);
-        ctx.fillText('The Nether trembled beneath his feet.', CANVAS_WIDTH / 2, storyY + 60 + floatOffset);
-
-        // Next level text with glowing blue outline
-        const nextLevelY = CANVAS_HEIGHT * 0.65;
-        ctx.strokeStyle = '#4444ff';
-        ctx.lineWidth = 4;
-        ctx.shadowColor = '#0000ff';
-        ctx.shadowBlur = 15 + Math.sin(time * 3) * 5;
-        ctx.font = 'bold 24px "Press Start 2P", monospace';
-        ctx.strokeText('⚔️ Level 3: To Be Designed by Sandro ⚔️', CANVAS_WIDTH / 2, nextLevelY);
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText('⚔️ Level 3: To Be Designed by Sandro ⚔️', CANVAS_WIDTH / 2, nextLevelY);
+        // Draw level-complete.png image
+        const levelCompleteImage = this.game.assetLoader.getAsset('level-complete');
+        if (levelCompleteImage) {
+            const imageWidth = 200;
+            const imageHeight = 200;
+            const imageX = (CANVAS_WIDTH - imageWidth) / 2;
+            const imageY = titleY + 40;
+            ctx.drawImage(levelCompleteImage, imageX, imageY, imageWidth, imageHeight);
+        }
 
         ctx.restore();
 
         // Render buttons
-        this.renderPixelButton(ctx, this.replayButton);
-        this.renderPixelButton(ctx, this.menuButton);
+        this.renderPixelButton(ctx, this.playAgainButton);
+        this.renderPixelButton(ctx, this.megaToasterButton);
     }
 
     renderLavaCracks(ctx, time) {

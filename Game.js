@@ -1,3 +1,17 @@
+import Player from './Player.js';
+import World from './World.js';
+import { CraftingPanel } from './CraftingPanel.js';
+import TouchControls from './TouchControls.js';
+import WelcomeScreen from './WelcomeScreen.js';
+import VictoryScreen from './VictoryScreen.js';
+import { AssetLoader } from './AssetLoader.js';
+import { drawBasaltPillar } from './netherUtils.js';
+import { AudioManager } from './AudioManager.js';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, GROUND_LEVEL, GAME_STATE, MINING_REQUIRED_CLICKS } from './constants.js';
+import { FloatingText } from './FloatingText.js';
+import QuizPanel from './QuizPanel.js';
+import Piglin from './Piglin.js';
+
 function _array_like_to_array(arr, len) {
     if (len == null || len > arr.length) len = arr.length;
     for(var i = 0, arr2 = new Array(len); i < len; i++)arr2[i] = arr[i];
@@ -187,18 +201,6 @@ function _ts_generator(thisArg, body) {
         };
     }
 }
-import Player from './Player.js';
-import World from './World.js';
-import { CraftingPanel } from './CraftingPanel.js';
-import TouchControls from './TouchControls.js';
-import WelcomeScreen from './WelcomeScreen.js';
-import VictoryScreen from './VictoryScreen.js';
-import { AssetLoader } from './AssetLoader.js';
-import { drawBasaltPillar } from './netherUtils.js';
-import { AudioManager } from './AudioManager.js';
-import { CANVAS_WIDTH, CANVAS_HEIGHT, GROUND_LEVEL, GAME_STATE, MINING_REQUIRED_CLICKS } from './constants.js';
-import { FloatingText } from './FloatingText.js';
-import QuizPanel from './QuizPanel.js';
 var Game = /*#__PURE__*/ function() {
     "use strict";
     function Game(container) {
@@ -279,11 +281,9 @@ var Game = /*#__PURE__*/ function() {
                                 ]), _this.assetsLoaded = ref[0], ref;
                                 // Initialize game objects after assets are loaded
                                 _this.resources = {
-                                    sticks: 0,
-                                    strings: 0,
-                                    flint: 0,
-                                    feather: 0,
-                                    goldNuggets: 0
+                                    wood: 0,
+                                    metal: 0,
+                                    blueFlame: 0
                                 };
                                 _this.world = new World(_this.assetLoader);
                                 _this.player = new Player(100, GROUND_LEVEL);
@@ -300,6 +300,7 @@ var Game = /*#__PURE__*/ function() {
                                 _this.lastTimestamp = 0;
                                 _this.isLoading = false;
                                 _this.bowCrafted = false;
+
                                 // Boots crafting completion callback
                                 _this.onBootsCrafted = function() {
                                     console.log('onBootsCrafted called - Starting portal activation');
@@ -469,6 +470,9 @@ var Game = /*#__PURE__*/ function() {
                     case 'e':
                         this.tryCollectResource();
                         break;
+                    case 'f':
+                        this.player.throwSpear();
+                        break;
                 }
             }
         },
@@ -490,37 +494,49 @@ var Game = /*#__PURE__*/ function() {
             key: "tryCollectResource",
             value: function tryCollectResource() {
                 const collectedItem = this.world.checkCollision(this.player);
-                if (!collectedItem) return this.tryMining();
+                if (!collectedItem) {
+                    // If no item to collect, try mining
+                    return this.tryMining();
+                }
 
                 const { type, x, y } = collectedItem;
-                const amount = type === 'gold nugget' ? 6 : 5;
-                const resourceType = type === 'gold nugget' ? 'goldNuggets' : type;
+                const amount = 1; // Each resource gives 1 item
                 
-                this.resources[resourceType] = (this.resources[resourceType] || 0) + amount;
+                // Add the resource to the player's inventory
+                this.resources[type] = (this.resources[type] || 0) + amount;
+                
+                // Remove the collected item from the world
                 this.world.removeItem(collectedItem);
-                this.craftingPanel.updateResources(this.resources);
-                this.craftingPanel.highlightResource(resourceType);
                 
-                // Effects
-                const displayType = type === 'gold nugget' ? 'gold nuggets' : type;
-                this.floatingTexts.push(new FloatingText(`+${amount} ${displayType}`, x, y));
+                // Update the crafting panel
+                this.craftingPanel.updateResources(this.resources);
+                this.craftingPanel.highlightResource(type);
+                
+                // Add visual feedback
+                this.floatingTexts.push(new FloatingText(`+${amount} ${type}`, x, y));
                 this.audioManager.play('collect', 0.7 * (0.9 + Math.random() * 0.2));
                 
-                // Update zombie speeds if gold was collected
-                if (resourceType === 'goldNuggets') {
-                    this.world.zombies.forEach(zombie => {
-                        zombie.updateSpeed(this.resources.goldNuggets || 0);
-                    });
-                }
-                
-                // Victory check
-                if (!this.bowCrafted && this.resources.sticks >= 10 && this.resources.strings >= 5 && 
-                    this.resources.flint >= 5 && this.resources.feather >= 5) {
-                    this.bowCrafted = true;
+                // Check victory conditions
+                if (this.checkVictoryConditions()) {
                     this.gameState = GAME_STATE.VICTORY;
                     this.victoryScreen.show();
                     this.audioManager.play('collect', 1.5);
                 }
+            }
+        },
+        {
+            key: "checkVictoryConditions",
+            value: function checkVictoryConditions() {
+                // Check if all toasters are defeated
+                const allToastersDefeated = this.world.toasters.length === 0;
+                
+                // Check if mighty spear can be crafted
+                const canCraftSpear = 
+                    this.resources.wood >= 5 &&
+                    this.resources.metal >= 3 &&
+                    this.resources.blueFlame >= 2;
+                
+                return allToastersDefeated && canCraftSpear;
             }
         },
         {
@@ -620,7 +636,7 @@ var Game = /*#__PURE__*/ function() {
 
                 if (isPlaying) {
                     // Process game updates in logical order
-                    this.world.updateZombies(deltaTime);
+                    this.world.updateToasters(deltaTime);
                     this.world.updateMiningSpots(deltaTime);
                     this.player.update(deltaTime, this.world);
 
@@ -649,11 +665,11 @@ var Game = /*#__PURE__*/ function() {
                     this.touchControls.update();
                     this.updateFloatingTexts(deltaTime);
 
-                    // Zombie collision check (only if player is vulnerable and doesn't have golden boots)
+                    // Toaster collision check (only if player is vulnerable and doesn't have golden boots)
                     if (!this.player.isImmune && !this.player.hasGoldenBoots) {
-                        const collidedZombie = this.world.checkZombieCollisions(this.player);
-                        if (collidedZombie) {
-                            this.handleZombieCollision();
+                        const collidedToaster = this.world.checkToasterCollisions(this.player);
+                        if (collidedToaster) {
+                            this.handleToasterCollision();
                         }
                         // Check for lava collision
                         if (this.checkLavaCollision()) {
@@ -661,11 +677,68 @@ var Game = /*#__PURE__*/ function() {
                         }
                     }
 
-                    // Update piglins
-                    this.updatePiglins(deltaTime);
-                    
-                    // Check portal collision
-                    this.checkPortalCollision();
+                    // Update spears
+                    for (let j = this.player.spears.length - 1; j >= 0; j--) {
+                        const spear = this.player.spears[j];
+                        spear.update();
+                        
+                        // Deactivate spears that are off screen
+                        if (spear.x < 0 || spear.x > this.world.levelWidth) {
+                            spear.deactivate();
+                            this.player.spears.splice(j, 1);
+                        }
+                    }
+
+                    // Check spear collisions with toasters
+                    console.log('Starting collision check cycle:', {
+                        numToasters: this.world.toasters.length,
+                        numSpears: this.player.spears.length
+                    });
+
+                    for (let i = this.world.toasters.length - 1; i >= 0; i--) {
+                        const toaster = this.world.toasters[i];
+                        console.log('Checking toaster:', {
+                            index: i,
+                            position: { x: toaster.x, y: toaster.y },
+                            health: toaster.health
+                        });
+
+                        for (let j = this.player.spears.length - 1; j >= 0; j--) {
+                            const spear = this.player.spears[j];
+                            console.log('Checking spear:', {
+                                index: j,
+                                position: { x: spear.x, y: spear.y },
+                                direction: spear.direction
+                            });
+                            
+                            if (spear.checkCollision(toaster)) {
+                                console.log('COLLISION DETECTED!', {
+                                    toasterIndex: i,
+                                    spearIndex: j,
+                                    toasterHealth: toaster.health
+                                });
+
+                                // Handle spear hit
+                                const isDestroyed = toaster.handleSpearHit();
+                                
+                                // Remove the spear
+                                this.player.spears.splice(j, 1);
+                                
+                                // Add hit effect
+                                this.floatingTexts.push(new FloatingText("Hit!", toaster.x, toaster.y - 20));
+                                
+                                // If health reaches 0, remove the toaster
+                                if (isDestroyed) {
+                                    console.log('Toaster destroyed!');
+                                    this.world.toasters.splice(i, 1);
+                                    // Add destruction effect
+                                    this.floatingTexts.push(new FloatingText("Destroyed!", toaster.x, toaster.y - 40));
+                                    this.audioManager.play('collect', 0.7);
+                                }
+                                break;
+                            }
+                        }
+                    }
                 } else if (isQuiz) {
                     this.quizPanel.update(deltaTime);
                 }
@@ -934,25 +1007,9 @@ var Game = /*#__PURE__*/ function() {
                 }
                 // Render piglins if they exist
                 if (this.piglins) {
-                    this.ctx.save();
-                    this.ctx.translate(-this.cameraOffset, 0);
-                    
                     this.piglins.forEach(piglin => {
-                        // Piglin body
-                        this.ctx.fillStyle = '#C2B280'; // Tan color
-                        this.ctx.fillRect(piglin.x, piglin.y, piglin.width, piglin.height);
-                        
-                        // Piglin face
-                        this.ctx.fillStyle = '#8B4513'; // Dark brown
-                        this.ctx.fillRect(piglin.x + 10, piglin.y + 10, 20, 20);
-                        
-                        // Eyes
-                        this.ctx.fillStyle = 'red';
-                        this.ctx.fillRect(piglin.x + 15, piglin.y + 15, 4, 4);
-                        this.ctx.fillRect(piglin.x + 25, piglin.y + 15, 4, 4);
+                        piglin.render(this.ctx, this.cameraOffset, this.assetLoader);
                     });
-                    
-                    this.ctx.restore();
                 }
             }
         },
@@ -1030,29 +1087,10 @@ var Game = /*#__PURE__*/ function() {
             }
         },
         {
-            key: "handleZombieCollision",
-            value: function handleZombieCollision() {
-                if (this.player.hasGoldenBoots) return; // No effect if player has golden boots
-                
+            key: "handleToasterCollision",
+            value: function handleToasterCollision() {
                 // Reset player position slightly back to avoid being immediately hit again
                 this.player.x -= 60 * (this.player.facingRight ? 1 : -1);
-
-                // Check if player has any resources to lose
-                let availableResources = [];
-                for (let type in this.resources) {
-                    if (this.resources[type] >= 5) {
-                        availableResources.push(type);
-                    }
-                }
-
-                if (availableResources.length > 0) {
-                    // Choose a random resource to reduce
-                    const resourceType = availableResources[Math.floor(Math.random() * availableResources.length)];
-                    this.resources[resourceType] -= 5;
-                    
-                    // Add visual feedback about resource loss
-                    this.floatingTexts.push(new FloatingText(`-5 ${resourceType}!`, this.player.x, this.player.y - 40));
-                }
 
                 // Add some visual feedback
                 this.floatingTexts.push(new FloatingText("Ouch!", this.player.x, this.player.y - 20));
@@ -1386,35 +1424,17 @@ var Game = /*#__PURE__*/ function() {
         {
             key: "updatePiglins",
             value: function updatePiglins(deltaTime) {
-                if (!this.piglins) return;
+                if (!this.piglins || this.piglins.length === 0) {
+                    return;
+                }
                 
                 this.piglins.forEach(piglin => {
-                    // Move towards player if not wearing golden boots
-                    if (!this.player.hasGoldenBoots) {
-                        if (piglin.x > this.player.x) {
-                            piglin.x -= piglin.speed;
-                        } else {
-                            piglin.x += piglin.speed;
-                        }
-                        
-                        // Check collision with player only if not wearing golden boots
-                        if (!this.player.isImmune &&
-                            piglin.x < this.player.x + this.player.width &&
-                            piglin.x + piglin.width > this.player.x &&
-                            piglin.y < this.player.y + this.player.height &&
-                            piglin.y + piglin.height > this.player.y) {
-                            this.handlePiglinCollision();
-                        }
-                    } else {
-                        // If player has golden boots, make piglins move away
-                        const distanceToPlayer = Math.abs(piglin.x - this.player.x);
-                        if (distanceToPlayer < 200) { // Only move away if player is within 200 pixels
-                            if (piglin.x > this.player.x) {
-                                piglin.x += piglin.speed;
-                            } else {
-                                piglin.x -= piglin.speed;
-                            }
-                        }
+                    // Update piglin position and state
+                    piglin.update(deltaTime);
+                    
+                    // Check collision with player only if not wearing golden boots
+                    if (!this.player.hasGoldenBoots && !this.player.isImmune && piglin.checkCollision(this.player)) {
+                        this.handlePiglinCollision();
                     }
                 });
             }

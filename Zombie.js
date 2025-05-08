@@ -32,6 +32,12 @@ var Zombie = /*#__PURE__*/ function() {
         this.speed = this.baseSpeed;
         this.direction = 1; // 1 for right, -1 for left
         this.goldNuggetsCollected = 0;
+        // Health system
+        this.health = 2;
+        this.isHit = false;
+        this.hitTimer = 0;
+        this.hitDuration = 500;
+        this.showFlash = false;
         // Patrol zone
         this.patrolStart = patrolStart || x - 150;
         this.patrolEnd = patrolEnd || x + 150;
@@ -50,6 +56,22 @@ var Zombie = /*#__PURE__*/ function() {
         {
             key: "update",
             value: function update(deltaTime) {
+                // Update hit effect if active
+                if (this.isHit) {
+                    this.hitTimer += deltaTime;
+                    // Toggle flash effect
+                    if (this.hitTimer >= 100) {
+                        this.showFlash = !this.showFlash;
+                        this.hitTimer = 0;
+                    }
+                    // End hit effect when duration is over
+                    if (this.hitTimer >= this.hitDuration) {
+                        this.isHit = false;
+                        this.hitTimer = 0;
+                        this.showFlash = false;
+                    }
+                }
+
                 // Move zombie based on direction
                 this.x += this.speed * this.direction;
                 // Add falling state and velocity for animation
@@ -128,6 +150,16 @@ var Zombie = /*#__PURE__*/ function() {
             }
         },
         {
+            key: "handleSpearHit",
+            value: function handleSpearHit() {
+                this.health--;
+                this.isHit = true;
+                this.hitTimer = 0;
+                this.showFlash = true;
+                return this.health <= 0;
+            }
+        },
+        {
             key: "render",
             value: function render(ctx, cameraOffset, assetLoader) {
                 // Get camera offset from world
@@ -177,6 +209,10 @@ var Zombie = /*#__PURE__*/ function() {
                         var fallRotation = Math.min(this.fallVelocity * 0.05, 0.3) * this.direction;
                         ctx.rotate(fallRotation);
                     }
+                    // Apply flash effect if hit
+                    if (this.showFlash) {
+                        ctx.globalAlpha = 0.5;
+                    }
                     // Draw piglin image centered at origin (after transformations)
                     ctx.drawImage(piglinTexture, -piglinWidth / 2, -piglinHeight / 2, piglinWidth, piglinHeight);
                     ctx.restore();
@@ -184,6 +220,19 @@ var Zombie = /*#__PURE__*/ function() {
                     // Fallback if texture isn't loaded - draw simple zombie shape
                     ctx.fillStyle = '#F5C242'; // Piglin gold color
                     ctx.fillRect(screenX, this.y, this.width, this.height);
+                }
+                // Render health bar
+                if (this.health > 0) {
+                    var healthBarWidth = 30;
+                    var healthBarHeight = 4;
+                    var healthBarX = screenX + (this.width - healthBarWidth) / 2;
+                    var healthBarY = this.y - 10;
+                    // Background
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                    ctx.fillRect(healthBarX, healthBarY, healthBarWidth, healthBarHeight);
+                    // Health
+                    ctx.fillStyle = this.health === 2 ? '#00FF00' : '#FF0000';
+                    ctx.fillRect(healthBarX, healthBarY, healthBarWidth * (this.health / 2), healthBarHeight);
                 }
                 // Add "falling" text above zombie if it's falling
                 if (this.isFalling) {

@@ -1,3 +1,6 @@
+import { FloatingText } from './FloatingText.js';
+import { GAME_STATE } from './constants.js';
+
 function _class_call_check(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
         throw new TypeError("Cannot call a class as a function");
@@ -17,7 +20,7 @@ function _create_class(Constructor, protoProps, staticProps) {
     if (staticProps) _defineProperties(Constructor, staticProps);
     return Constructor;
 }
-import { CANVAS_WIDTH, CANVAS_HEIGHT, GAME_STATE } from './constants.js';
+import { CANVAS_WIDTH, CANVAS_HEIGHT } from './constants.js';
 var QuizPanel = /*#__PURE__*/ function() {
     "use strict";
     function QuizPanel(game) {
@@ -42,7 +45,7 @@ var QuizPanel = /*#__PURE__*/ function() {
         this.feedbackTimer = 0;
         this.buttonAnimations = [0, 0, 0, 0]; // Animation progress for each button
 
-        // Quiz question bank - educational questions on various topic
+        // Quiz question bank - educational questions on various topics
         this.quizQuestions = [
             {
                 question: "What is 7 × 8?",
@@ -54,8 +57,8 @@ var QuizPanel = /*#__PURE__*/ function() {
                 ],
                 correctAnswer: 2,
                 reward: {
-                    type: "goldNuggets",
-                    amount: 6
+                    type: "wood",
+                    amount: 2
                 }
             },
             {
@@ -68,8 +71,8 @@ var QuizPanel = /*#__PURE__*/ function() {
                 ],
                 correctAnswer: 2,
                 reward: {
-                    type: "goldNuggets",
-                    amount: 6
+                    type: "metal",
+                    amount: 1
                 }
             },
             {
@@ -82,8 +85,8 @@ var QuizPanel = /*#__PURE__*/ function() {
                 ],
                 correctAnswer: 1,
                 reward: {
-                    type: "goldNuggets",
-                    amount: 6
+                    type: "blueFlame",
+                    amount: 1
                 }
             },
             {
@@ -96,8 +99,8 @@ var QuizPanel = /*#__PURE__*/ function() {
                 ],
                 correctAnswer: 2,
                 reward: {
-                    type: "goldNuggets",
-                    amount: 6
+                    type: "wood",
+                    amount: 2
                 }
             },
             {
@@ -110,8 +113,8 @@ var QuizPanel = /*#__PURE__*/ function() {
                 ],
                 correctAnswer: 2,
                 reward: {
-                    type: "goldNuggets",
-                    amount: 6
+                    type: "metal",
+                    amount: 1
                 }
             },
             {
@@ -299,13 +302,16 @@ var QuizPanel = /*#__PURE__*/ function() {
             key: "show",
             value: function show(miningSpot) {
                 this.visible = true;
-                this.fadeIn = 0;
-                this.lastTime = Date.now();
-                this.selectRandomQuiz();
-                this.selectedAnswer = null;
-                this.showingFeedback = false;
                 this.currentMiningSpot = miningSpot;
-                this.buttonAnimations = [0, 0, 0, 0];
+                this.selectedAnswer = null;
+                this.selectRandomQuiz();
+                
+                // Debug logging
+                console.log('Quiz Panel Show:', {
+                    miningSpot: miningSpot,
+                    resourceType: miningSpot?.resourceType,
+                    currentMiningSpot: this.currentMiningSpot
+                });
             }
         },
         {
@@ -341,57 +347,90 @@ var QuizPanel = /*#__PURE__*/ function() {
         {
             key: "checkAnswer",
             value: function checkAnswer() {
-                var _this = this;
-                if (this.selectedAnswer === this.currentQuiz.correctAnswer) {
-                    // Correct answer
-                    this.feedbackMessage = 'Correct! Gold nuggets will appear.';
-                    this.feedbackColor = '#4CAF50'; // Green
-                    // If this quiz is from a mining spot, spawn the resource there
-                    if (this.currentMiningSpot) {
-                        this.spawnResourceAtMiningSpot();
-                    } else {
-                        // Fallback for quizzes not triggered by mining
-                        this.game.resources[this.currentQuiz.reward.type] += this.currentQuiz.reward.amount;
-                        this.game.craftingPanel.updateResources(this.game.resources);
-                        // Add floating text for direct rewards
-                        var playerX = this.game.player.x;
-                        var playerY = this.game.player.y;
-                        this.game.floatingTexts.push(new this.game.floatingTextClass("+".concat(this.currentQuiz.reward.amount, " ").concat(this.currentQuiz.reward.type), playerX, playerY - 20));
-                    }
+                if (this.selectedAnswer === null) return;
+
+                const isCorrect = this.selectedAnswer === this.currentQuiz.correctAnswer;
+                
+                if (isCorrect) {
+                    // Spawn the resource
+                    this.spawnResourceAtMiningSpot();
+                    
+                    // Hide the quiz panel
+                    this.hide();
+                    
+                    // Return to playing state
+                    this.game.gameState = GAME_STATE.PLAYING;
+                    
+                    // Add success feedback
+                    this.game.floatingTexts.push(new FloatingText('Correct!', this.game.player.x, this.game.player.y - 40));
+                    this.game.audioManager.play('collect', 1.0);
                 } else {
-                    // Wrong answer
-                    this.feedbackMessage = 'Incorrect! Try again.';
-                    this.feedbackColor = '#F44336'; // Red
+                    // Add failure feedback
+                    this.game.floatingTexts.push(new FloatingText('Try again!', this.game.player.x, this.game.player.y - 40));
+                    this.game.audioManager.play('hurt', 0.7);
                 }
-                // Show feedback
-                this.showingFeedback = true;
-                this.feedbackTimer = 2000; // 2 seconds
-                // After feedback, close quiz and return to game
-                setTimeout(function() {
-                    _this.hide();
-                    _this.game.gameState = GAME_STATE.PLAYING;
-                }, this.feedbackTimer);
             }
         },
         {
             key: "spawnResourceAtMiningSpot",
             value: function spawnResourceAtMiningSpot() {
-                if (!this.currentMiningSpot) return;
-                // Create a new collectable item at the mining spot location
-                var item = {
-                    type: this.currentMiningSpot.type,
+                if (!this.currentMiningSpot) {
+                    console.error('No mining spot available');
+                    return;
+                }
+
+                // Debug logging
+                console.log('Spawning Resource:', {
+                    miningSpot: this.currentMiningSpot,
+                    type: this.currentMiningSpot.type
+                });
+
+                // Get the resource type from the mining spot
+                const resourceType = this.currentMiningSpot.type;
+                
+                // Get the correct image for the resource type
+                let imageName;
+                switch(resourceType) {
+                    case 'wood':
+                        imageName = 'wood';
+                        break;
+                    case 'metal':
+                        imageName = 'metal';
+                        break;
+                    case 'blueFlame':
+                        imageName = 'flame';
+                        break;
+                    default:
+                        console.error('Unknown resource type:', resourceType);
+                        return;
+                }
+
+                // Create a collectable item at the mining spot's position
+                const item = {
+                    id: `resource_${Date.now()}`,
+                    type: resourceType,
                     x: this.currentMiningSpot.x,
-                    y: this.currentMiningSpot.y - 10,
+                    y: this.currentMiningSpot.y,
                     width: 30,
                     height: 30,
-                    id: "".concat(this.currentMiningSpot.type, "-").concat(Date.now())
+                    image: this.game.assetLoader.getAsset(imageName)
                 };
-                // Add the item to the world
+
+                // Debug logging
+                console.log('Created Resource Item:', item);
+
+                // Add the item to the world's items array
                 this.game.world.items.push(item);
-                // Mark mining spot as having spawned a resource
-                this.currentMiningSpot.resourceSpawned = true;
-                // Add floating text indicating resource spawned
-                this.game.floatingTexts.push(new this.game.floatingTextClass("Gold nuggets appeared!", this.currentMiningSpot.x, this.currentMiningSpot.y - 40));
+
+                // Create floating text to indicate the resource
+                this.game.floatingTexts.push(new FloatingText(
+                    `+1 ${resourceType}!`,
+                    this.currentMiningSpot.x,
+                    this.currentMiningSpot.y - 20
+                ));
+
+                // Mark the mining spot as mined
+                this.currentMiningSpot.mined = true;
             }
         },
         {
