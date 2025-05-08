@@ -70,9 +70,9 @@ export var ResourceManager = /*#__PURE__*/ function() {
         _class_call_check(this, ResourceManager);
         this.game = game;
         this.resources = {
-            wood: 5,
-            metal: 3,
-            blueFlame: 2
+            wood: 0,
+            metal: 0,
+            blueFlame: 0
         };
         // Crafting requirements for mighty spear
         this.craftingRequirements = {

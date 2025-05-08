@@ -30,7 +30,7 @@ var Zombie = /*#__PURE__*/ function() {
         this.y = platform ? platform.y - 50 : GROUND_LEVEL - 10; // Adjusted to match visual position of zombie
         this.width = 30; // Slightly wider to match zombie image
         this.height = 50; // Taller to match zombie image
-        this.baseSpeed = 0.5;
+        this.baseSpeed = 0.8; // Increased from 0.5 to 0.8 for faster movement
         this.speed = this.baseSpeed;
         this.direction = 1; // 1 for right, -1 for left
         this.goldNuggetsCollected = 0;
@@ -92,7 +92,7 @@ var Zombie = /*#__PURE__*/ function() {
                     // Throw toast if cooldown is ready
                     if (this.throwCooldown <= 0) {
                         this.throwToast();
-                        this.throwCooldown = 60; // 1 second cooldown at 60fps
+                        this.throwCooldown = 90; // Reduced from 120 to 90 frames (1.5 seconds at 60fps)
                     }
                 } else {
                     // Normal movement

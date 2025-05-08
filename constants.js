@@ -1,7 +1,7 @@
 export var CANVAS_WIDTH = 800;
 export var CANVAS_HEIGHT = 500;
 export var GROUND_LEVEL = 375;
-export var GRAVITY = 0.5;
+export var GRAVITY = 0.7;
 // Detect if using touch device for responsive design
 export var IS_TOUCH_DEVICE = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
 // Platform constants
