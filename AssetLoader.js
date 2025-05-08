@@ -213,25 +213,42 @@ export var AssetLoader = /*#__PURE__*/ function() {
             'metal': './assets/metal.png',
             'flame': './assets/flame.png',
             'level-complete': './assets/level-complete.png',
-            'spear': './assets/spear.png'
+            'spear': './assets/spear.png',
+            'background-music': './assets/background-music.mp3'
         };
     }
     _create_class(AssetLoader, [
         {
-            key: "loadImage",
-            value: function loadImage(name, url) {
+            key: "loadAsset",
+            value: function loadAsset(name, url) {
                 var _this = this;
                 return new Promise(function(resolve, reject) {
-                    var img = new Image();
-                    img.onload = function() {
-                        _this.assets[name] = img;
-                        resolve(img);
-                    };
-                    img.onerror = function() {
-                        console.error("Failed to load image: ".concat(url));
-                        reject(new Error("Failed to load image: ".concat(url)));
-                    };
-                    img.src = url;
+                    // Check if it's an audio file
+                    if (url.endsWith('.mp3')) {
+                        var audio = new Audio();
+                        audio.oncanplaythrough = function() {
+                            _this.assets[name] = audio;
+                            resolve(audio);
+                        };
+                        audio.onerror = function() {
+                            console.error("Failed to load audio: ".concat(url));
+                            reject(new Error("Failed to load audio: ".concat(url)));
+                        };
+                        audio.src = url;
+                    } else {
+                        // Handle as image
+                        var img = new Image();
+                        img.crossOrigin = "anonymous"; // Add this line to handle CORS
+                        img.onload = function() {
+                            _this.assets[name] = img;
+                            resolve(img);
+                        };
+                        img.onerror = function() {
+                            console.error("Failed to load image: ".concat(url));
+                            reject(new Error("Failed to load image: ".concat(url)));
+                        };
+                        img.src = url;
+                    }
                 });
             }
         },
@@ -258,7 +275,7 @@ export var AssetLoader = /*#__PURE__*/ function() {
                                 ]);
                                 loadPromises = Object.entries(_this.assetURLs).map(function(param) {
                                     var _param = _sliced_to_array(param, 2), name = _param[0], url = _param[1];
-                                    return _this.loadImage(name, url);
+                                    return _this.loadAsset(name, url);
                                 });
                                 return [
                                     4,

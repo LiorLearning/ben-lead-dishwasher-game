@@ -19,10 +19,12 @@ function _create_class(Constructor, protoProps, staticProps) {
 }
 import { GROUND_LEVEL } from './constants.js';
 import { isColliding } from './utils.js';
+import { Toast } from './Toast.js';
+
 var Zombie = /*#__PURE__*/ function() {
     "use strict";
-    function Zombie(x, patrolStart, patrolEnd) {
-        var platform = arguments.length > 3 && arguments[3] !== void 0 ? arguments[3] : null;
+    function Zombie(x, patrolStart, patrolEnd, game) {
+        var platform = arguments.length > 4 && arguments[4] !== void 0 ? arguments[4] : null;
         _class_call_check(this, Zombie);
         this.x = x;
         this.y = platform ? platform.y - 50 : GROUND_LEVEL - 10; // Adjusted to match visual position of zombie
@@ -51,11 +53,18 @@ var Zombie = /*#__PURE__*/ function() {
         this.animationSpeed = 10;
         this.currentFrame = 0;
         this.totalFrames = 4; // 4 frame simple animation
+        this.game = game;
+        this.active = true;
+        this.throwCooldown = 0;
+        this.throwRange = 150; // Reduced from 200 to 100 pixels
+        this.throwCooldownTime = 250; // 3 seconds at 60fps
     }
     _create_class(Zombie, [
         {
             key: "update",
             value: function update(deltaTime) {
+                if (!this.active) return;
+
                 // Update hit effect if active
                 if (this.isHit) {
                     this.hitTimer += deltaTime;
@@ -72,8 +81,34 @@ var Zombie = /*#__PURE__*/ function() {
                     }
                 }
 
-                // Move zombie based on direction
-                this.x += this.speed * this.direction;
+                // Check if player is in range
+                const dx = this.game.player.x - this.x;
+                const distance = Math.abs(dx);
+                
+                if (distance <= this.throwRange) {
+                    // Face the player
+                    this.direction = dx > 0 ? 1 : -1;
+                    
+                    // Throw toast if cooldown is ready
+                    if (this.throwCooldown <= 0) {
+                        this.throwToast();
+                        this.throwCooldown = 60; // 1 second cooldown at 60fps
+                    }
+                } else {
+                    // Normal movement
+                    this.x += this.speed * this.direction;
+                    
+                    // Check for wall collision
+                    if (this.x <= 0 || this.x >= this.game.world.levelWidth - this.width) {
+                        this.direction *= -1;
+                    }
+                }
+
+                // Update cooldown
+                if (this.throwCooldown > 0) {
+                    this.throwCooldown--;
+                }
+
                 // Add falling state and velocity for animation
                 this.isFalling = false;
                 this.fallVelocity = this.fallVelocity || 0;
@@ -117,15 +152,15 @@ var Zombie = /*#__PURE__*/ function() {
                     this.currentFrame = (this.currentFrame + 1) % this.totalFrames;
                     this.frameCount = 0;
                 }
-                ;
             }
         },
         {
             key: "updateSpeed",
-            value: function updateSpeed(goldNuggets) {
-                this.goldNuggetsCollected = goldNuggets;
-                var speedIncreases = Math.floor(this.goldNuggetsCollected / 6);
-                this.speed = Math.min(this.baseSpeed + speedIncreases * 0.1, 1.2);
+            value: function updateSpeed(resources) {
+                // Calculate total resources collected
+                const totalResources = (resources.wood || 0) + (resources.metal || 0) + (resources.blueFlame || 0);
+                // Increase speed by 0.1 for each resource collected
+                this.speed = Math.min(this.baseSpeed + totalResources * 0.1, 1.2); // Cap speed at 1.2
             }
         },
         {
@@ -162,12 +197,15 @@ var Zombie = /*#__PURE__*/ function() {
         {
             key: "render",
             value: function render(ctx, cameraOffset, assetLoader) {
-                // Get camera offset from world
-                var screenX = this.x - cameraOffset;
+                if (!this.active) return;
+
+                const screenX = this.x - cameraOffset;
+                
                 // Don't render if off screen
                 if (screenX < -this.width || screenX > ctx.canvas.width) {
                     return;
                 }
+
                 // Save context for rotation during falling
                 ctx.save();
                 // Apply visual effects for falling zombie
@@ -252,8 +290,21 @@ var Zombie = /*#__PURE__*/ function() {
                 // Restore context after rotation
                 ctx.restore();
             }
+        },
+        {
+            key: "throwToast",
+            value: function throwToast() {
+                const toast = new Toast(
+                    this.x + (this.direction > 0 ? this.width : 0),
+                    this.y + this.height / 2,
+                    this.direction,
+                    this.game
+                );
+                this.game.activeToasts.push(toast);
+            }
         }
     ]);
     return Zombie;
 }();
+
 export { Zombie as default };

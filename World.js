@@ -25,9 +25,10 @@ import MiningSpot from './MiningSpot.js';
 import { RESOURCE_TYPES } from './constants.js';
 var World = /*#__PURE__*/ function() {
     "use strict";
-    function World(assetLoader) {
+    function World(assetLoader, game) {
         _class_call_check(this, World);
         this.assetLoader = assetLoader;
+        this.game = game;
         this.levelWidth = 4000; // Extended level width for more platforming
         this.items = [];
         this.platforms = [];
@@ -190,12 +191,15 @@ var World = /*#__PURE__*/ function() {
                     if (!hasGuard) {
                         const patrolStart = platform.x + 20;
                         const patrolEnd = platform.x + platform.width - 20;
-                        this.toasters.push(new Zombie(
+                        const toaster = new Zombie(
                             platform.x + platform.width / 2,
                             patrolStart,
                             patrolEnd,
+                            this.game,
                             platform
-                        ));
+                        );
+                        toaster.y = platform.y - toaster.height; // Position toaster on top of platform
+                        this.toasters.push(toaster);
                     }
                 });
             }
@@ -203,9 +207,8 @@ var World = /*#__PURE__*/ function() {
         {
             key: "generateToasters",
             value: function generateToasters() {
-                var _this = this;
                 // Add toasters at different locations along the level
-                var toasterPositions = [
+                const toasterPositions = [
                     {
                         x: 400,
                         patrolStart: 300,
@@ -237,42 +240,45 @@ var World = /*#__PURE__*/ function() {
                         patrolEnd: 3550
                     }
                 ];
+
                 // Create toaster instances on ground level
-                toasterPositions.forEach(function(param) {
-                    var x = param.x, patrolStart = param.patrolStart, patrolEnd = param.patrolEnd;
-                    _this.toasters.push(new Zombie(x, patrolStart, patrolEnd));
+                toasterPositions.forEach(({ x, patrolStart, patrolEnd }) => {
+                    this.toasters.push(new Zombie(x, patrolStart, patrolEnd, this.game));
                 });
-                // Add toasters on platforms to make them more challenging
-                var platformToasters = [
+
+                // Add toasters on platforms
+                const platformToasters = [
                     {
-                        platformIndex: 1,
+                        platformIndex: 1,  // First platform
                         patrolOffset: 20
                     },
                     {
-                        platformIndex: 3,
+                        platformIndex: 3,  // Second platform
                         patrolOffset: 20
                     },
                     {
-                        platformIndex: 5,
+                        platformIndex: 5,  // Third platform
                         patrolOffset: 20
                     },
                     {
-                        platformIndex: 7,
+                        platformIndex: 7,  // Fourth platform
                         patrolOffset: 20
                     },
                     {
-                        platformIndex: 9,
+                        platformIndex: 9,  // Fifth platform
                         patrolOffset: 20
                     }
                 ];
-                platformToasters.forEach(function(param) {
-                    var platformIndex = param.platformIndex, patrolOffset = param.patrolOffset;
-                    if (platformIndex < _this.platforms.length) {
-                        var platform = _this.platforms[platformIndex];
-                        var x = platform.x + platform.width / 2;
-                        var patrolStart = platform.x + patrolOffset;
-                        var patrolEnd = platform.x + platform.width - patrolOffset;
-                        _this.toasters.push(new Zombie(x, patrolStart, patrolEnd, platform));
+
+                platformToasters.forEach(({ platformIndex, patrolOffset }) => {
+                    if (platformIndex < this.platforms.length) {
+                        const platform = this.platforms[platformIndex];
+                        const x = platform.x + platform.width / 2;
+                        const patrolStart = platform.x + patrolOffset;
+                        const patrolEnd = platform.x + platform.width - patrolOffset;
+                        const toaster = new Zombie(x, patrolStart, patrolEnd, this.game, platform);
+                        toaster.y = platform.y - toaster.height; // Position toaster on top of platform
+                        this.toasters.push(toaster);
                     }
                 });
             }

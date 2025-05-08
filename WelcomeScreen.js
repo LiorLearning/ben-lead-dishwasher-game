@@ -60,6 +60,7 @@ class WelcomeScreen {
         if (this.isPointInButton(mouseX, mouseY, this.startButton)) {
             this.game.gameState = GAME_STATE.PLAYING;
             this.game.audioManager.play('collect', 1.0);
+            this.game.audioManager.startBackgroundMusic();
         }
     }
 

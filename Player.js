@@ -65,6 +65,7 @@ var Player = /*#__PURE__*/ function() {
         this.spearCooldown = 500; // Cooldown between spear throws in milliseconds
         this.breathingOffset = 0; // Track breathing animation offset
         this.breathingSpeed = 0.02; // Speed of breathing animation
+        this.health = 5; // Player starts with 5 hearts
     }
     _create_class(Player, [
         {
@@ -116,6 +117,11 @@ var Player = /*#__PURE__*/ function() {
                 // Create new spear with correct position and direction, passing game reference
                 this.spears.push(new Spear(spearX, spearY, this.facingRight ? 1 : -1, this.game));
                 this.lastSpearTime = currentTime;
+
+                // Play throw sound effect
+                if (this.game && this.game.audioManager) {
+                    this.game.audioManager.play('throw', 0.8);
+                }
             }
         },
         {

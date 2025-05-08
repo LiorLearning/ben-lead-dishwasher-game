@@ -30,7 +30,7 @@ export class HealthPanel {
         // Draw retry counter in its own background panel
         ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
         ctx.fillRect(this.retryX - 10, this.retryY - 10, 150, 40);
-
+        
         // Draw retry counter
         ctx.fillStyle = 'white';
         ctx.font = '20px Arial';

@@ -148,6 +148,7 @@ export var AudioManager = /*#__PURE__*/ function() {
         this.sounds = {};
         this.isMuted = false;
         this.audioContext = null;
+        this.backgroundMusic = null;
     }
     _create_class(AudioManager, [
         {
@@ -163,6 +164,13 @@ export var AudioManager = /*#__PURE__*/ function() {
                             _this.sounds['hurt'] = _this.generateSimpleSound(0.3, 'hurt');
                             _this.sounds['jump'] = _this.generateSimpleSound(0.2, 'jump');
                             _this.sounds['collect'] = _this.generateSimpleSound(0.2, 'collect');
+                            _this.sounds['throw'] = _this.generateSimpleSound(0.2, 'throw');
+                            
+                            // Load background music
+                            _this.backgroundMusic = new Audio('./assets/background-music.mp3');
+                            _this.backgroundMusic.loop = true;
+                            _this.backgroundMusic.volume = 0.5;
+                            
                             console.log('All sounds loaded successfully');
                             return [
                                 2,
@@ -210,6 +218,11 @@ export var AudioManager = /*#__PURE__*/ function() {
                         oscillator.frequency.setValueAtTime(800, this.audioContext.currentTime);
                         oscillator.frequency.linearRampToValueAtTime(1200, this.audioContext.currentTime + duration / 2);
                         oscillator.frequency.linearRampToValueAtTime(800, this.audioContext.currentTime + duration);
+                        break;
+                    case 'throw':
+                        oscillator.type = 'square';
+                        oscillator.frequency.setValueAtTime(600, this.audioContext.currentTime);
+                        oscillator.frequency.linearRampToValueAtTime(1200, this.audioContext.currentTime + duration);
                         break;
                 }
                 // Configure gain (volume envelope)
@@ -273,19 +286,40 @@ export var AudioManager = /*#__PURE__*/ function() {
             key: "mute",
             value: function mute() {
                 this.isMuted = true;
+                if (this.backgroundMusic) {
+                    this.backgroundMusic.pause();
+                }
             }
         },
         {
             key: "unmute",
             value: function unmute() {
                 this.isMuted = false;
+                if (this.backgroundMusic) {
+                    this.backgroundMusic.play();
+                }
             }
         },
         {
             key: "toggleMute",
             value: function toggleMute() {
                 this.isMuted = !this.isMuted;
+                if (this.backgroundMusic) {
+                    if (this.isMuted) {
+                        this.backgroundMusic.pause();
+                    } else {
+                        this.backgroundMusic.play();
+                    }
+                }
                 return this.isMuted;
+            }
+        },
+        {
+            key: "startBackgroundMusic",
+            value: function startBackgroundMusic() {
+                if (this.backgroundMusic && !this.isMuted) {
+                    this.backgroundMusic.play();
+                }
             }
         }
     ]);
