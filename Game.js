@@ -505,6 +505,9 @@ var Game = /*#__PURE__*/ function() {
                 // Add the resource to the player's inventory
                 this.resources[type] = (this.resources[type] || 0) + amount;
                 
+                // Increase toaster speed by 0.1 for each resource collected
+                this.world.increaseToasterSpeed(0.1);
+                
                 // Remove the collected item from the world
                 this.world.removeItem(collectedItem);
                 
@@ -883,6 +886,11 @@ var Game = /*#__PURE__*/ function() {
                     // Render player at its position relative to camera
                     var playerScreenX = this.player.x - this.cameraOffset;
                     this.player.render(this.ctx, playerScreenX);
+                    
+                    // Render spears
+                    for (let spear of this.player.spears) {
+                        spear.render(this.ctx, this.cameraOffset);
+                    }
                     var _iteratorNormalCompletion = true, _didIteratorError = false, _iteratorError = undefined;
                     try {
                         // Render floating texts
@@ -1031,15 +1039,10 @@ var Game = /*#__PURE__*/ function() {
         {
             key: "renderZombieSpeed",
             value: function renderZombieSpeed() {
-                // Display zombie speed in top left corner
-                const baseSpeed = 0.5;
-                let currentSpeed = baseSpeed;
-                
-                // Calculate current speed based on gold collected (same formula as in Zombie.js)
-                if (this.resources && this.resources.goldNuggets !== undefined) {
-                    const goldNuggets = this.resources.goldNuggets;
-                    const speedIncreases = Math.floor(goldNuggets / 6);
-                    currentSpeed = Math.min(baseSpeed + speedIncreases * 0.1, 1.2);
+                // Get the actual speed from the first toaster (they all have the same speed)
+                let currentSpeed = 0.5; // Default speed
+                if (this.world && this.world.toasters && this.world.toasters.length > 0) {
+                    currentSpeed = this.world.toasters[0].speed;
                 }
                 
                 // Draw background box
@@ -1054,7 +1057,7 @@ var Game = /*#__PURE__*/ function() {
                 this.ctx.font = '16px Arial';
                 this.ctx.textAlign = 'left';
                 this.ctx.textBaseline = 'middle';
-                this.ctx.fillText(`Zombie Speed: ${currentSpeed.toFixed(1)}`, 20, 25);
+                this.ctx.fillText(`Toaster Speed: ${currentSpeed.toFixed(1)}`, 20, 25);
             }
         },
         {

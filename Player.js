@@ -107,18 +107,14 @@ var Player = /*#__PURE__*/ function() {
                 const currentTime = Date.now();
                 if (currentTime - this.lastSpearTime < this.spearCooldown) return;
                 
-                // Calculate spear position from center of tiger
-                const spearX = this.x + this.width / 2;
+                // Use the player's exact current position
+                const spearX = this.x;
                 const spearY = this.y + this.height / 2;
                 
-                // Error handling for invalid positions
-                if (spearX < 0 || spearY < 0) {
-                    console.error('Invalid spear launch position:', { spearX, spearY });
-                    return;
-                }
+                console.log('Player throwing spear from:', spearX, spearY, 'facing:', this.facingRight ? 'right' : 'left');
                 
-                // Create new spear with correct position and direction
-                this.spears.push(new Spear(spearX, spearY, this.facingRight ? 1 : -1));
+                // Create new spear with correct position and direction, passing game reference
+                this.spears.push(new Spear(spearX, spearY, this.facingRight ? 1 : -1, this.game));
                 this.lastSpearTime = currentTime;
             }
         },
@@ -237,10 +233,6 @@ var Player = /*#__PURE__*/ function() {
                 if (this.hasShovel) {
                     this.renderShovel(ctx, screenX);
                 }
-                // Render spears
-                this.spears.forEach(function(spear) {
-                    spear.render(ctx, screenX);
-                });
             }
         },
         {
