@@ -45,6 +45,7 @@ var MiningSpot = /*#__PURE__*/ function() {
                 this.clickCount++;
                 if (this.clickCount >= MINING_REQUIRED_CLICKS) {
                     this.mined = true;
+                    this.startRespawnTimer(); // Start respawn timer when mining is complete
                     return true; // Mining complete
                 }
                 return false; // Still mining

@@ -11,6 +11,7 @@ import { CANVAS_WIDTH, CANVAS_HEIGHT, GROUND_LEVEL, GAME_STATE, MINING_REQUIRED_
 import { FloatingText } from './FloatingText.js';
 import QuizPanel from './QuizPanel.js';
 import Piglin from './Piglin.js';
+import { HealthPanel } from './HealthPanel.js';
 
 function _array_like_to_array(arr, len) {
     if (len == null || len > arr.length) len = arr.length;
@@ -233,7 +234,9 @@ var Game = /*#__PURE__*/ function() {
             _lavaParticles: [],
             _floatingEmbers: [],
             _piglinDistance: 0,
-            bootsCrafted: false
+            bootsCrafted: false,
+            retryCounter: 0,
+            activeToasts: []
         });
         // Pre-bind methods
         this._handleKeyDown = this._handleKeyDown.bind(this);
@@ -281,15 +284,16 @@ var Game = /*#__PURE__*/ function() {
                                 ]), _this.assetsLoaded = ref[0], ref;
                                 // Initialize game objects after assets are loaded
                                 _this.resources = {
-                                    wood: 0,
-                                    metal: 0,
-                                    blueFlame: 0
+                                    wood: 0,    // Set initial wood count here
+                                    metal: 0,   // Set initial metal count here
+                                    blueFlame: 0 // Set initial blueFlame count here
                                 };
-                                _this.world = new World(_this.assetLoader);
+                                _this.world = new World(_this.assetLoader, _this);
                                 _this.player = new Player(100, GROUND_LEVEL);
                                 _this.player.game = _this; // Add reference to game for asset access
                                 _this.craftingPanel = new CraftingPanel(_this.resources, _this);
                                 _this.quizPanel = new QuizPanel(_this);
+                                _this.healthPanel = new HealthPanel(_this);
                                 _this.floatingTexts = [];
                                 _this.gameState = GAME_STATE.WELCOME; // Start with welcome screen
                                 _this.isGameActive = false; // For backward compatibility
@@ -300,6 +304,9 @@ var Game = /*#__PURE__*/ function() {
                                 _this.lastTimestamp = 0;
                                 _this.isLoading = false;
                                 _this.bowCrafted = false;
+
+                                // Update initial toaster speeds
+                                _this.updateAllToasterSpeeds();
 
                                 // Boots crafting completion callback
                                 _this.onBootsCrafted = function() {
@@ -505,8 +512,8 @@ var Game = /*#__PURE__*/ function() {
                 // Add the resource to the player's inventory
                 this.resources[type] = (this.resources[type] || 0) + amount;
                 
-                // Increase toaster speed by 0.1 for each resource collected
-                this.world.increaseToasterSpeed(0.1);
+                // Update all toaster speeds
+                this.updateAllToasterSpeeds();
                 
                 // Remove the collected item from the world
                 this.world.removeItem(collectedItem);
@@ -639,7 +646,10 @@ var Game = /*#__PURE__*/ function() {
 
                 if (isPlaying) {
                     // Process game updates in logical order
-                    this.world.updateToasters(deltaTime);
+                    const toastHit = this.world.updateToasters(deltaTime, this.player);
+                    if (toastHit && toastHit.hit && !this.player.isImmune && !this.player.hasGoldenBoots) {
+                        this.handleToasterCollision(); // Reuse the same damage effect
+                    }
                     this.world.updateMiningSpots(deltaTime);
                     this.player.update(deltaTime, this.world);
 
@@ -746,6 +756,12 @@ var Game = /*#__PURE__*/ function() {
                     this.quizPanel.update(deltaTime);
                 }
 
+                // Update active toasts
+                this.activeToasts = this.activeToasts.filter(toast => {
+                    toast.update();
+                    return toast.active;
+                });
+
                 // Render at consistent 60fps using timestamp delta
                 if (deltaTime >= 16) {
                     this.render();
@@ -781,6 +797,9 @@ var Game = /*#__PURE__*/ function() {
                     cameraOffset: this.cameraOffset,
                     playerX: this.player?.x
                 });
+
+                // Add game reference to ctx
+                this.ctx.game = this;
 
                 // Batch clear and transform operations
                 this.ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
@@ -1019,6 +1038,13 @@ var Game = /*#__PURE__*/ function() {
                         piglin.render(this.ctx, this.cameraOffset, this.assetLoader);
                     });
                 }
+                // Render health panel
+                this.healthPanel.render(this.ctx);
+
+                // Render active toasts
+                this.activeToasts.forEach(toast => {
+                    toast.render(this.ctx, toast.x - this.cameraOffset);
+                });
             }
         },
         {
@@ -1108,6 +1134,20 @@ var Game = /*#__PURE__*/ function() {
                 this.player.isHit = true;
                 this.player.isImmune = true;
                 this.player.immunityTimer = 0;
+                
+                // Reduce health
+                this.player.health--;
+                
+                // Check if player is out of health
+                if (this.player.health <= 0) {
+                    // Increment retry counter
+                    this.retryCounter++;
+                    // Reset player position but keep resources
+                    this.player.x = 100;
+                    this.player.y = GROUND_LEVEL;
+                    this.player.health = 5; // Reset health
+                    this.cameraOffset = 0; // Reset camera
+                }
                 
                 setTimeout(() => {
                     this.player.isHit = false;
@@ -1489,23 +1529,6 @@ var Game = /*#__PURE__*/ function() {
                 // Jump up slightly to get out of the lava
                 this.player.vy = -5;
                 
-                // Check if player has any resources to lose
-                var availableResources = [];
-                for(var type in this.resources){
-                    if (this.resources[type] >= 5) {
-                        availableResources.push(type);
-                    }
-                }
-                if (availableResources.length > 0) {
-                    // Choose a random resource to reduce
-                    var resourceType = availableResources[Math.floor(Math.random() * availableResources.length)];
-                    this.resources[resourceType] -= 5;
-                    // Update crafting panel
-                    this.craftingPanel.updateResources(this.resources);
-                    // Add visual feedback about resource loss
-                    this.floatingTexts.push(new FloatingText("-5 ".concat(resourceType, "!"), this.player.x, this.player.y - 40));
-                }
-                
                 // Add some visual feedback (lava specific)
                 this.floatingTexts.push(new FloatingText("Hot! Hot! Hot!", this.player.x, this.player.y - 20));
                 
@@ -1535,6 +1558,16 @@ var Game = /*#__PURE__*/ function() {
                     hasGoldenBoots: this.player?.hasGoldenBoots,
                     gameState: this.gameState
                 });
+            }
+        },
+        {
+            key: "updateAllToasterSpeeds",
+            value: function updateAllToasterSpeeds() {
+                if (this.world && this.world.toasters) {
+                    this.world.toasters.forEach(toaster => {
+                        toaster.updateSpeed(this.resources);
+                    });
+                }
             }
         }
     ]);

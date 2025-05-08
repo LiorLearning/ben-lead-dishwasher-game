@@ -212,7 +212,8 @@ export var AssetLoader = /*#__PURE__*/ function() {
             'wood': './assets/wood.png',
             'metal': './assets/metal.png',
             'flame': './assets/flame.png',
-            'level-complete': './assets/level-complete.png'
+            'level-complete': './assets/level-complete.png',
+            'spear': './assets/spear.png'
         };
     }
     _create_class(AssetLoader, [

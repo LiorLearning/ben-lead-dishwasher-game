@@ -407,27 +407,17 @@ var World = /*#__PURE__*/ function() {
         {
             key: "updateToasters",
             value: function updateToasters(deltaTime) {
-                var _iteratorNormalCompletion = true, _didIteratorError = false, _iteratorError = undefined;
-                try {
-                    // Update all toasters
-                    for(var _iterator = this.toasters[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true){
-                        var toaster = _step.value;
-                        toaster.update(deltaTime);
-                    }
-                } catch (err) {
-                    _didIteratorError = true;
-                    _iteratorError = err;
-                } finally{
-                    try {
-                        if (!_iteratorNormalCompletion && _iterator.return != null) {
-                            _iterator.return();
-                        }
-                    } finally{
-                        if (_didIteratorError) {
-                            throw _iteratorError;
-                        }
-                    }
-                }
+                this.toasters.forEach(toaster => {
+                    toaster.update(deltaTime);
+                });
+            }
+        },
+        {
+            key: "increaseToasterSpeed",
+            value: function increaseToasterSpeed(amount) {
+                this.toasters.forEach(toaster => {
+                    toaster.speed += amount;
+                });
             }
         },
         {
