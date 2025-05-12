@@ -34,33 +34,47 @@ class QuizManager {
     }
     
     generateQuestion() {
-        const operations = ['+', '-', '×'];
+        const operations = ['×', '÷'];
         const operation = operations[Math.floor(Math.random() * operations.length)];
         
         let num1, num2, answer;
         
         switch (operation) {
-            case '+':
-                num1 = Math.floor(Math.random() * 20) + 1;
-                num2 = Math.floor(Math.random() * 20) + 1;
-                answer = num1 + num2;
-                break;
-            case '-':
-                num1 = Math.floor(Math.random() * 20) + 1;
-                num2 = Math.floor(Math.random() * num1) + 1;
-                answer = num1 - num2;
-                break;
             case '×':
-                num1 = Math.floor(Math.random() * 12) + 1;
-                num2 = Math.floor(Math.random() * 12) + 1;
+                // For multiplication: 1 digit x 1 digit or 2 digit x 1 digit (under 20)
+                if (Math.random() > 0.5) {
+                    // 1 digit x 1 digit
+                    num1 = Math.floor(Math.random() * 9) + 1;
+                    num2 = Math.floor(Math.random() * 9) + 1;
+                } else {
+                    // 2 digit x 1 digit (under 20)
+                    num1 = Math.floor(Math.random() * 19) + 1;
+                    num2 = Math.floor(Math.random() * 9) + 1;
+                }
                 answer = num1 * num2;
+                break;
+            case '÷':
+                // For division: 2 digit by 1 digit
+                num2 = Math.floor(Math.random() * 9) + 1; // 1 digit divisor
+                answer = Math.floor(Math.random() * 9) + 1; // 1 digit quotient
+                num1 = num2 * answer; // Calculate dividend to ensure clean division
                 break;
         }
         
         // Generate wrong answers
         const answers = [answer];
         while (answers.length < 4) {
-            const wrongAnswer = answer + (Math.random() > 0.5 ? 1 : -1) * (Math.floor(Math.random() * 5) + 1);
+            let wrongAnswer;
+            if (operation === '×') {
+                // For multiplication, generate wrong answers close to the correct answer
+                wrongAnswer = answer + (Math.random() > 0.5 ? 1 : -1) * (Math.floor(Math.random() * 5) + 1);
+            } else {
+                // For division, generate wrong answers that are also valid quotients
+                wrongAnswer = Math.floor(Math.random() * 9) + 1;
+                if (wrongAnswer === answer) {
+                    wrongAnswer = (wrongAnswer % 9) + 1; // Ensure different from correct answer
+                }
+            }
             if (!answers.includes(wrongAnswer)) {
                 answers.push(wrongAnswer);
             }
