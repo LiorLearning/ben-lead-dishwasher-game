@@ -1,14 +1,14 @@
 class AudioManager {
     constructor() {
         // Create audio elements
-        this.bgm = new Audio('assets/bgm.mp3');
-        this.attackSound = new Audio('assets/roar.mp3');
-        this.dishHitSound = new Audio('assets/dish.mp3');
-        this.answerSound = new Audio('assets/answer.mp3');
-        this.wrongSound = new Audio('assets/wrong.mp3');
-        this.buttonSound = new Audio('assets/button.mp3');
-        this.explosionSound = new Audio('assets/explosion.mp3');
-        this.portalSound = new Audio('assets/portal.mp3');
+        this.bgm = new Audio('assets/audio/bgm.mp3');
+        this.attackSound = new Audio('assets/audio/roar.mp3');
+        this.dishHitSound = new Audio('assets/audio/dish.mp3');
+        this.answerSound = new Audio('assets/audio/answer.mp3');
+        this.wrongSound = new Audio('assets/audio/wrong.mp3');
+        this.buttonSound = new Audio('assets/audio/button.mp3');
+        this.explosionSound = new Audio('assets/audio/explosion.mp3');
+        this.portalSound = new Audio('assets/audio/portal.mp3');
 
         // Set BGM to loop
         this.bgm.loop = true;

@@ -72,14 +72,14 @@ class AssetsLoader {
         
         // Preload audio files
         const audioFiles = [
-            'assets/bgm.mp3',
-            'assets/roar.mp3',
-            'assets/dish.mp3',
-            'assets/answer.mp3',
-            'assets/wrong.mp3',
-            'assets/button.mp3',
-            'assets/explosion.mp3',
-            'assets/portal.mp3'
+            'assets/audio/bgm.mp3',
+            'assets/audio/roar.mp3',
+            'assets/audio/dish.mp3',
+            'assets/audio/answer.mp3',
+            'assets/audio/wrong.mp3',
+            'assets/audio/button.mp3',
+            'assets/audio/explosion.mp3',
+            'assets/audio/portal.mp3'
         ];
         
         const audioPromises = audioFiles.map(url => {
