@@ -27,7 +27,7 @@ class ToastShower {
         this.electricTrail = new ElectricTrail(scene);
 
         // Automatic shower properties
-        this.showerInterval = 15; // Changed from 20 to 15 seconds
+        this.showerInterval = 20; // Changed from 15 to 20 seconds
         this.timeUntilNextShower = this.showerInterval;
         this.lastShowerTime = 0;
         this.countdownElement = null;

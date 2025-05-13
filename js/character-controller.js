@@ -730,7 +730,7 @@ class CharacterController {
         for (let i = this.attackEffects.effects.length - 1; i >= 0; i--) {
             const effect = this.attackEffects.effects[i];
             const projectilePos = effect.mesh.position;
-            const projectileRadius = 0.2;
+            const projectileRadius = 0.8;
             
             if (effect.isDish) {
                 // Check if dish hits player and enemy is facing player
