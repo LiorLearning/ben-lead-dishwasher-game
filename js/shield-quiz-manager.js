@@ -1,6 +1,6 @@
-// quiz-manager.js - Handles quiz functionality for fire-orb collection
+// shield-quiz-manager.js - Handles shield activation quiz functionality
 
-class QuizManager {
+class ShieldQuizManager {
     constructor() {
         this.quizPanel = document.getElementById('quiz-panel-root');
         this.questionText = this.quizPanel.querySelector('.question-text');
@@ -10,7 +10,7 @@ class QuizManager {
         this.currentQuestion = 0;
         this.correctAnswers = 0;
         this.questions = [];
-        this.earnedFireballs = 0;
+        this.shieldDuration = 0;
         
         // Add click event listeners to answer buttons
         this.answerButtons.forEach(button => {
@@ -116,12 +116,6 @@ class QuizManager {
         const selectedAnswer = parseInt(button.textContent);
         const question = this.questions[this.currentQuestion];
         
-        // Check if question exists
-        if (!question) {
-            console.error('No question found for current index:', this.currentQuestion);
-            return;
-        }
-        
         // Disable all buttons
         this.answerButtons.forEach(btn => btn.disabled = true);
         
@@ -158,13 +152,13 @@ class QuizManager {
         setTimeout(() => {
             this.currentQuestion++;
             this.showQuestion();
-        }, 800); // Reduced from 1500ms to 800ms
+        }, 800);
     }
     
     showQuiz() {
         // Release pointer lock before showing quiz
         document.exitPointerLock();
-        
+     
         this.generateQuestions();
         this.currentQuestion = 0;
         this.correctAnswers = 0;
@@ -177,21 +171,20 @@ class QuizManager {
     }
     
     completeQuiz() {
-        // Calculate earned fireballs (2 per correct answer)
-        this.earnedFireballs = this.correctAnswers * 2;
+        // Calculate shield duration (3 seconds per correct answer)
+        this.shieldDuration = this.correctAnswers * 3;
         
         // Show completion message
-        this.quizFeedback.textContent = `You earned ${this.earnedFireballs} fireballs!`;
-        this.quizFeedback.style.color = '#FFD700';
+        this.quizFeedback.textContent = `Shield activated for ${this.shieldDuration} seconds!`;
+        this.quizFeedback.style.color = '#00FFFF';
         
-        // Hide quiz panel after a shorter delay
+        // Hide quiz panel after a delay
         setTimeout(() => {
             this.hideQuiz();
             
-            // Add earned fireballs to ammo
-            if (window.game && window.game.uiManager) {
-                const currentAmmo = window.game.uiManager.fireballAmmo;
-                window.game.uiManager.updateFireballAmmo(currentAmmo + this.earnedFireballs);
+            // Activate shield
+            if (window.game && window.game.toastShower) {
+                window.game.toastShower.activateShield(this.shieldDuration);
             }
             
             // Resume game and request pointer lock immediately
@@ -199,6 +192,9 @@ class QuizManager {
                 window.game.unfreezeGameLoop();
                 document.body.requestPointerLock();
             }
-        }, 1000); // Reduced from 2000ms to 1000ms
+        }, 1000);
     }
-} 
+}
+
+// Export the class
+window.ShieldQuizManager = ShieldQuizManager; 

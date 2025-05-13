@@ -11,16 +11,43 @@ class Game {
             this.uiManager = new UIManager();
             this.inputManager = new InputManager();
             this.quizManager = new QuizManager();
+            this.shieldQuizManager = new ShieldQuizManager();
             this.audioManager = new AudioManager();
+            this.toastShower = new ToastShower(this.sceneSetup.scene, this.assetsLoader);
             
             // Game state
             this.lastTime = 0;
             this.isGameRunning = false;
             this.isLoading = true;
             this.isPaused = false;
+            this.fireballCollectionCount = 0; // Track number of fireball collections
             
             // Make game instance globally accessible
             window.game = this;
+            
+            // Add toast test button listener
+            const toastTestButton = document.getElementById('toastTestButton');
+            if (toastTestButton) {
+                console.log('Toast test button found, adding click listener');
+                toastTestButton.addEventListener('click', () => {
+                    console.log('Toast test button clicked');
+                    if (this.toastShower) {
+                        console.log('Starting toast shower');
+                        this.toastShower.startShower();
+                    } else {
+                        console.error('Toast shower not initialized');
+                    }
+                });
+            } else {
+                console.error('Toast test button not found in DOM');
+            }
+            
+            // Add keyboard event listener for shield activation
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Shift' && this.isGameRunning && !this.isPaused) {
+                    this.activateShield();
+                }
+            });
             
             // Wait for BGM to load before showing loading screen
             this.audioManager.waitForBGMLoad().then(() => {
@@ -186,6 +213,9 @@ class Game {
                 this.characterController.portalEffect.update(delta);
             }
             
+            // Update toast shower
+            this.toastShower.update(delta);
+            
             // Render the scene
             this.sceneSetup.render();
             
@@ -305,6 +335,50 @@ class Game {
         this.audioManager.playBGM();
         this.lastTime = performance.now();
         requestAnimationFrame(this.gameLoop.bind(this));
+    }
+
+    completeQuiz() {
+        // Calculate earned fireballs (2 per correct answer)
+        this.earnedFireballs = this.correctAnswers * 2;
+        
+        // Show completion message
+        this.quizFeedback.textContent = `You earned ${this.earnedFireballs} fireballs!`;
+        this.quizFeedback.style.color = '#FFD700';
+        
+        // Increment fireball collection count
+        if (window.game) {
+            window.game.fireballCollectionCount++;
+            
+            // Start toast shower every 2 collections
+            if (window.game.fireballCollectionCount % 2 === 0) {
+                window.game.toastShower.startShower();
+            }
+        }
+        
+        // Hide quiz panel after a shorter delay
+        setTimeout(() => {
+            this.hideQuiz();
+            
+            // Add earned fireballs to ammo
+            if (window.game && window.game.uiManager) {
+                const currentAmmo = window.game.uiManager.fireballAmmo;
+                window.game.uiManager.updateFireballAmmo(currentAmmo + this.earnedFireballs);
+            }
+            
+            // Resume game and request pointer lock immediately
+            if (window.game) {
+                window.game.unfreezeGameLoop();
+                document.body.requestPointerLock();
+            }
+        }, 1000);
+    }
+
+    activateShield() {
+        // Only activate if not already in a quiz
+        if (!this.isPaused) {
+            this.freezeGameLoop();
+            this.shieldQuizManager.showQuiz();
+        }
     }
 }
 

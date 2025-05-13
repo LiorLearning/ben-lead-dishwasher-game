@@ -514,40 +514,34 @@ class CharacterController {
     }
     
     createEnemyCharacter(x, y) {
-        try {
-            const dishwasherSprite = this.assetsLoader.createSprite('enemySprite', 'dishwasher', 1.8, 1.8);
-            const enemy = new Character(this.sceneSetup.scene, dishwasherSprite, 'Grimejaw', x, y, 1.8, 1.8);
-            enemy.leftMargin = 12;
-            enemy.rightMargin = 4;
-
-            // Create shadow for enemy
-            const shadowGeometry = new THREE.CircleGeometry(1.0, 32);
-            const shadowMaterial = new THREE.MeshBasicMaterial({
-                color: 0x000000,
-                transparent: true,
-                opacity: 0.5, // Increased opacity
-                depthWrite: false
-            });
-            const shadow = new THREE.Mesh(shadowGeometry, shadowMaterial);
-            shadow.position.set(x, y - 0.9, -0.5); // Position between background and character
-            shadow.rotation.x = -Math.PI / 2; // Rotate to lay flat on the ground
-            this.sceneSetup.scene.add(shadow);
-            enemy.shadow = shadow; // Store reference to shadow
-
-            // Set movement/jump properties for being chased
-            enemy.moveSpeed = 0;
-            enemy.jumpForce = 10;
-            enemy.gravity = 20;
-            enemy.airResistance = 0.95;
-            enemy.airControl = 0.8;
-            enemy.maxJumps = 2;
-
-            this.characters.enemy = enemy;
-            return enemy;
-        } catch (error) {
-            console.error('Error creating enemy character:', error);
+        // Create dishwasher sprite with increased size
+        const dishwasherSprite = this.assetsLoader.createSprite('dishwasherSprite', 'dishwasher', 3.0, 3.0); // Increased from 1.5 to 3.0
+        if (!dishwasherSprite) {
+            console.error('Failed to create dishwasher sprite');
             return null;
         }
+        
+        // Create the dishwasher character
+        const dishwasher = new Character(
+            this.sceneSetup.scene,
+            dishwasherSprite,
+            'dishwasher',
+            x,
+            y,
+            3.0, // Increased from 1.5 to 3.0
+            3.0  // Increased from 1.5 to 3.0
+        );
+        
+        // Set dishwasher-specific properties
+        dishwasher.isPlayer = false;
+        dishwasher.moveSpeed = 3;
+        dishwasher.health = 100;
+        dishwasher.maxHealth = 100;
+        
+        // Store the dishwasher character
+        this.characters.enemy = dishwasher;
+        
+        return dishwasher;
     }
     
     getRandomSafeDistance() {

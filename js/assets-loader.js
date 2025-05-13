@@ -65,10 +65,13 @@ class AssetsLoader {
         
         // Load character textures
         this.loadTexture('tiger', 'assets/tiger-hero.png');
+        this.loadTexture('tigerShield', 'assets/tiger-shield.png');
         this.loadTexture('dishwasher', 'assets/dishwasher-villain.png');
         
         // Load collectible textures
         this.loadTexture('fireOrb', 'assets/fire-orb.png');
+        this.loadTexture('toast', 'assets/toast.png');
+        this.loadTexture('toaster', 'assets/toaster.png');
         
         // Preload audio files
         const audioFiles = [
