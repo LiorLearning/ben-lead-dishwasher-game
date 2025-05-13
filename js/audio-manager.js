@@ -27,6 +27,9 @@ class AudioManager {
         this.showerSound.volume = 0.7;
         this.shieldSound.volume = 0.7;
         
+        // Track mute state
+        this.isMuted = false;
+        
         // Wait for audio to be loaded
         this.isLoaded = false;
         this.bgmLoaded = false;
@@ -213,5 +216,35 @@ class AudioManager {
         this.shieldSound.play().catch(error => {
             console.error('Error playing shield sound:', error);
         });
+    }
+
+    toggleMute() {
+        this.isMuted = !this.isMuted;
+        
+        // Get all audio elements
+        const allSounds = [
+            this.bgm,
+            this.attackSound,
+            this.dishHitSound,
+            this.answerSound,
+            this.wrongSound,
+            this.buttonSound,
+            this.explosionSound,
+            this.portalSound,
+            this.showerSound,
+            this.shieldSound
+        ];
+        
+        // Toggle mute state for all sounds
+        allSounds.forEach(sound => {
+            sound.muted = this.isMuted;
+        });
+        
+        // If unmuting and BGM was playing, resume it
+        if (!this.isMuted && this.bgmLoaded) {
+            this.playBGM();
+        }
+        
+        return this.isMuted;
     }
 } 

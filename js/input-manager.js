@@ -10,6 +10,13 @@ class InputManager {
             if (e.key === ' ' && window.game && window.game.uiManager.isPaused) {
                 return;
             }
+            
+            // Handle mute toggle
+            if (e.key.toLowerCase() === 'm' && window.game && window.game.audioManager) {
+                const isMuted = window.game.audioManager.toggleMute();
+                console.log(`Game sounds ${isMuted ? 'muted' : 'unmuted'}`);
+            }
+            
             this.keys[e.key.toLowerCase()] = true;
         });
 
