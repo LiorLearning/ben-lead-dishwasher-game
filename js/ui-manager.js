@@ -13,7 +13,7 @@ class UIManager {
         this.loadingProgressBar = document.querySelector('.loading-progress-bar');
         this.loadingMessage = document.querySelector('.loading-message');
         
-        this.maxFireballAmmo = 6;
+        this.maxFireballAmmo = 3;
         this.fireballAmmo = this.maxFireballAmmo;
         this.maxTigerHealth = 100;
         this.maxDishwasherHealth = 100;
@@ -35,10 +35,32 @@ class UIManager {
     
     initializeFireballIcons() {
         this.fireballIconsContainer.innerHTML = '';
+        const title = document.createElement('div');
+        title.className = 'ammo-title';
+        title.textContent = 'Tridents';
+        title.style.color = '#FFFFFF';
+        title.style.fontFamily = "'Press Start 2P', cursive";
+        title.style.fontSize = '14px';
+        title.style.marginBottom = '5px';
+        this.fireballIconsContainer.appendChild(title);
+
+        const iconsContainer = document.createElement('div');
+        iconsContainer.className = 'trident-icons-container';
+        iconsContainer.style.display = 'flex';
+        iconsContainer.style.gap = '10px';
+        this.fireballIconsContainer.appendChild(iconsContainer);
+
         for (let i = 0; i < this.maxFireballAmmo; i++) {
             const icon = document.createElement('div');
             icon.className = 'fireball-icon';
-            this.fireballIconsContainer.appendChild(icon);
+            icon.style.backgroundImage = 'url(assets/trident-logo.png)';
+            icon.style.width = '40px';
+            icon.style.height = '40px';
+            icon.style.backgroundSize = 'contain';
+            icon.style.backgroundRepeat = 'no-repeat';
+            icon.style.backgroundPosition = 'center';
+            icon.style.filter = 'brightness(1.2)';
+            iconsContainer.appendChild(icon);
         }
     }
     
@@ -65,7 +87,7 @@ class UIManager {
     
     refillFireballs() {
         this.updateFireballAmmo(this.maxFireballAmmo);
-        this.showGameMessage('Fireballs Refilled!', 1500);
+        this.showGameMessage('Tridents Refilled!', 1500);
     }
     
     showGameMessage(message, duration = 3000) {
@@ -95,7 +117,7 @@ class UIManager {
         
         // Create message
         const message = document.createElement('div');
-        message.textContent = 'Level 1 completed, next level to be designed by Ben';
+        message.textContent = 'Golden Dishwasher was defeated, but the toaster got away. Continue designing the next level.';
         message.style.marginBottom = '20px';
         
         // Create play again button
@@ -249,7 +271,7 @@ class UIManager {
         }
         
         // Show victory message with play again button
-        this.showStatusMessage('VICTORY! You overpowered the Dishwasher!', 'victory', true);
+        this.showStatusMessage('You have defeated Golden Dishwasher, but the toaster got away. Continue designing the next level.', 'victory', true);
         
         // Play victory sound if available
         if (window.game && window.game.audioManager) {

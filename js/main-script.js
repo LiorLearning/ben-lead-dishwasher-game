@@ -85,11 +85,7 @@ class Game {
             this.uiManager.updateLoadingProgress(100, 'Game Ready!');
             setTimeout(() => {
                 this.uiManager.hideLoadingScreen();
-                
-                // Start the game loop and play BGM
-                this.isGameRunning = true;
-                this.audioManager.playBGM();
-                requestAnimationFrame(this.gameLoop.bind(this));
+                // Don't start the game loop here anymore
             }, 1000);
             
         } catch (error) {
@@ -338,14 +334,14 @@ class Game {
     }
 
     completeQuiz() {
-        // Calculate earned fireballs (2 per correct answer)
+        // Calculate earned tridents (2 per correct answer)
         this.earnedFireballs = this.correctAnswers * 2;
         
         // Show completion message
-        this.quizFeedback.textContent = `You earned ${this.earnedFireballs} fireballs!`;
-        this.quizFeedback.style.color = '#FFD700';
+        this.quizFeedback.textContent = `You earned ${this.earnedFireballs} tridents!`;
+        this.quizFeedback.style.color = '#4A90E2';
         
-        // Increment fireball collection count
+        // Increment trident collection count
         if (window.game) {
             window.game.fireballCollectionCount++;
             
@@ -359,7 +355,7 @@ class Game {
         setTimeout(() => {
             this.hideQuiz();
             
-            // Add earned fireballs to ammo
+            // Add earned tridents to ammo
             if (window.game && window.game.uiManager) {
                 const currentAmmo = window.game.uiManager.fireballAmmo;
                 window.game.uiManager.updateFireballAmmo(currentAmmo + this.earnedFireballs);
@@ -379,6 +375,13 @@ class Game {
             this.freezeGameLoop();
             this.shieldQuizManager.showQuiz();
         }
+    }
+
+    startGame() {
+        // Start the game loop and play BGM
+        this.isGameRunning = true;
+        this.audioManager.playBGM();
+        requestAnimationFrame(this.gameLoop.bind(this));
     }
 }
 

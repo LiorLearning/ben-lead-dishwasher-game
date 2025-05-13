@@ -10,7 +10,7 @@ class AttackEffects {
         
         // Load textures
         this.textures = {
-            fireball: new THREE.TextureLoader().load('assets/fireball.png'),
+            trident: new THREE.TextureLoader().load('assets/trident.png'),
             plate: new THREE.TextureLoader().load('assets/plate.png'),
             cup: new THREE.TextureLoader().load('assets/cup.png'),
             glass: new THREE.TextureLoader().load('assets/glass.png')
@@ -51,26 +51,26 @@ class AttackEffects {
     createFireballTrail(x, y, direction) {
         // Create trail particle material
         const trailMaterial = new THREE.SpriteMaterial({
-            map: this.textures.fireball,
-            color: new THREE.Color(1, 0.5, 0), // Orange glow
+            map: this.textures.trident,
+            color: new THREE.Color(1, 1, 1), // White color
             transparent: true,
-            opacity: 0.8,
-            blending: THREE.AdditiveBlending // For better glow effect
+            opacity: 0.4,
+            blending: THREE.NormalBlending
         });
 
         // Create trail sprite
         const trailSprite = new THREE.Sprite(trailMaterial);
         trailSprite.position.set(x, y, 0);
-        trailSprite.scale.set(0.3, 0.3, 1); // Slightly smaller than the fireball
+        trailSprite.scale.set(0.6, 0.6, 1); // Increased from 0.2 to 0.6 (3x)
         this.scene.add(trailSprite);
 
         // Add to trail particles array
         this.trailParticles.push({
             mesh: trailSprite,
-            lifetime: 0.3, // Short lifetime for quick fade
+            lifetime: 0.2, // Shorter lifetime for quick fade
             elapsed: 0,
-            startScale: 0.3,
-            startOpacity: 0.8,
+            startScale: 0.6, // Increased from 0.2 to 0.6 (3x)
+            startOpacity: 0.4,
             position: new THREE.Vector2(x, y)
         });
     }
@@ -110,32 +110,32 @@ class AttackEffects {
     }
 
     createPlayerAttackEffect(x, y, direction = 1) {
-        // Create fireball sprite
+        // Create trident sprite
         const material = new THREE.SpriteMaterial({
-            map: this.textures.fireball,
+            map: this.textures.trident,
             transparent: true,
             opacity: 1.0,
-            rotation: 0.785, // 45 degrees in radians
-            blending: THREE.AdditiveBlending // For better glow effect
+            rotation: 0, // No rotation needed for trident
+            blending: THREE.NormalBlending
         });
-        const fireball = new THREE.Sprite(material);
-        fireball.scale.set(1.0, 1.0, 1);
-        fireball.position.set(x, y, 0);
-        this.scene.add(fireball);
+        const trident = new THREE.Sprite(material);
+        trident.scale.set(2.4, 2.4, 1); // Increased from 0.8 to 2.4 (3x)
+        trident.position.set(x, y, 0);
+        this.scene.add(trident);
         
         // Add to effects array
         this.effects.push({
-            mesh: fireball,
+            mesh: trident,
             lifetime: 1.0,
             elapsed: 0,
-            velocity: new THREE.Vector2(12 * direction, 0),
-            isFireball: true,
+            velocity: new THREE.Vector2(15 * direction, 0), // Slightly faster than fireball
+            isFireball: true, // Keep this flag for compatibility
             startX: x,
             rotationSpeed: 0,
             startY: y,
             shouldRotate: false,
-            lastTrailTime: 0, // Track when last trail was created
-            trailInterval: 0.05 // Create trail every 50ms
+            lastTrailTime: 0,
+            trailInterval: 0.03 // Create trail more frequently
         });
     }
 

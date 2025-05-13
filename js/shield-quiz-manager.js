@@ -161,11 +161,15 @@ class ShieldQuizManager {
         this.currentQuestion = 0;
         this.correctAnswers = 0;
         this.quizPanel.style.display = 'flex';
+        // Add shield quiz theme class
+        this.quizPanel.querySelector('.quiz-container').classList.add('shield-quiz');
         this.showQuestion();
     }
     
     hideQuiz() {
         this.quizPanel.style.display = 'none';
+        // Remove shield quiz theme class
+        this.quizPanel.querySelector('.quiz-container').classList.remove('shield-quiz');
     }
     
     completeQuiz() {

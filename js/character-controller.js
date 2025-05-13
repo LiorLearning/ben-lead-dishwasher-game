@@ -813,18 +813,33 @@ class CharacterController {
             const player = this.characters.player;
             const enemy = this.characters.enemy;
             
-            // Check if player has fireball ammo
+            // Check if player has trident ammo
             if (window.game && window.game.uiManager) {
                 if (!window.game.uiManager.useFireball()) {
-                    window.game.uiManager.showGameMessage('No fireballs left!', 1000);
+                    window.game.uiManager.showGameMessage('No tridents left!', 1000);
                     return;
                 }
             }
             
-            // Play roar sound when launching fireball
+            // Play throw sound when launching trident
             if (window.game && window.game.audioManager) {
                 window.game.audioManager.playAttackSound();
             }
+            
+            // Store original sprite properties
+            const originalTexture = player.sprite.material.map;
+            const originalScale = player.sprite.scale.clone();
+            
+            // Load and apply throwing sprite
+            const throwTexture = new THREE.TextureLoader().load('assets/tiger-throw.png', (texture) => {
+                // Calculate aspect ratio preserving scale
+                const aspectRatio = texture.image.width / texture.image.height;
+                const targetHeight = originalScale.y;
+                const targetWidth = targetHeight * aspectRatio;
+                
+                player.sprite.scale.set(targetWidth, targetHeight, 1);
+                player.sprite.material.map = texture;
+            });
             
             // Determine direction: 1 for right, -1 for left
             const direction = (player.sprite.rotation.y === 0) ? 1 : -1;
@@ -832,6 +847,14 @@ class CharacterController {
             const startX = player.sprite.position.x + direction * (player.width / 2 + 0.3);
             const startY = player.sprite.position.y;
             this.attackEffects.createPlayerAttackEffect(startX, startY, direction);
+            
+            // Reset sprite after attack cooldown
+            setTimeout(() => {
+                if (player.sprite && player.sprite.material) {
+                    player.sprite.material.map = originalTexture;
+                    player.sprite.scale.copy(originalScale);
+                }
+            }, this.attackCooldownDuration * 1000);
         }
     }
     
@@ -847,6 +870,44 @@ class CharacterController {
         if (this.characters.enemy && this.characters.enemy.shadow) {
             this.sceneSetup.scene.remove(this.characters.enemy.shadow);
         }
+    }
+    
+    reset() {
+        // Reset player position and state
+        if (this.characters.player) {
+            this.characters.player.sprite.position.set(-6, -3, 0.1);
+            this.characters.player.velocity.set(0, 0);
+            this.characters.player.health = this.characters.player.maxHealth;
+            this.characters.player.isGrounded = false;
+            this.characters.player.jumpCount = 0;
+        }
+
+        // Reset enemy position and state
+        if (this.characters.enemy) {
+            this.characters.enemy.sprite.position.set(8, -2, 0);
+            this.characters.enemy.velocity.set(0, 0);
+            this.characters.enemy.health = this.characters.enemy.maxHealth;
+            this.characters.enemy.isGrounded = false;
+            this.characters.enemy.jumpCount = 0;
+            this.characters.enemy.isDefeated = false;
+        }
+
+        // Reset attack cooldowns
+        this.attackCooldown = 0;
+        this.enemyAttackCooldown = 0;
+        this.enemyAttackTimer = 0;
+        this.enemyJumpCooldown = 0;
+
+        // Reset input state
+        this.keys = {
+            left: false,
+            right: false,
+            jump: false,
+            attack: false
+        };
+
+        // Clean up any existing effects
+        this.attackEffects.cleanup();
     }
     
     // Helper: returns true if attacker is facing target

@@ -69,7 +69,7 @@ class AssetsLoader {
         this.loadTexture('dishwasher', 'assets/dishwasher-villain.png');
         
         // Load collectible textures
-        this.loadTexture('fireOrb', 'assets/fire-orb.png');
+        this.loadTexture('trident-logo', 'assets/trident-logo.png');
         this.loadTexture('toast', 'assets/toast.png');
         this.loadTexture('toaster', 'assets/toaster.png');
         

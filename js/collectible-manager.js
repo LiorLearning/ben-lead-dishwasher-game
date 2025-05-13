@@ -57,7 +57,7 @@ class CollectibleManager {
         this.movingPlatformOrbs = new Set(); // Track orbs on moving platform
         this.platformCount = 0; // Track total number of platforms created
         this.lastPlatformCount = 0; // Track last known platform count
-        this.orbSize = 0.75; // Base size for fire orbs (1.5x the original 0.5)
+        this.orbSize = 1.5; // Increased from 0.75 to 1.5 (2x larger)
     }
     
     platformRemoved() {
@@ -67,10 +67,10 @@ class CollectibleManager {
     }
     
     spawnOrb(x, y, isOnMovingPlatform = false) {
-        // Create the main orb sprite with increased size
-        const orbSprite = this.assetsLoader.createSprite('orbSprite', 'fireOrb', this.orbSize, this.orbSize);
+        // Create the main trident sprite with increased size
+        const orbSprite = this.assetsLoader.createSprite('orbSprite', 'trident-logo', this.orbSize, this.orbSize);
         if (!orbSprite) {
-            console.error('Failed to create fire orb sprite');
+            console.error('Failed to create trident sprite');
             return;
         }
         orbSprite.position.set(x, y, 0);
@@ -79,14 +79,14 @@ class CollectibleManager {
         const glowTexture = this.createGlowTexture();
         const glowMaterial = new THREE.SpriteMaterial({
             map: glowTexture,
-            color: 0xFFD700,
+            color: 0x4A90E2, // Changed to a blue color to match trident theme
             transparent: true,
             blending: THREE.AdditiveBlending,
             opacity: 0.6
         });
         const glowSprite = new THREE.Sprite(glowMaterial);
         glowSprite.scale.set(this.orbSize * 1.5, this.orbSize * 1.5, 1);
-        glowSprite.position.set(x, y, -0.1); // Slightly behind the orb
+        glowSprite.position.set(x, y, -0.1); // Slightly behind the trident
         
         // Add both sprites to the scene
         this.sceneSetup.scene.add(orbSprite);
@@ -98,7 +98,7 @@ class CollectibleManager {
         for (let i = 0; i < particleCount; i++) {
             const particleGeometry = new THREE.CircleGeometry(0.05, 8);
             const particleMaterial = new THREE.MeshBasicMaterial({
-                color: 0xFFA500,
+                color: 0x4A90E2, // Changed to match trident theme
                 transparent: true,
                 opacity: 0.4,
                 blending: THREE.AdditiveBlending
@@ -133,11 +133,11 @@ class CollectibleManager {
         canvas.height = 64;
         const ctx = canvas.getContext('2d');
         
-        // Create radial gradient for glow
+        // Create radial gradient for glow with blue color
         const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-        gradient.addColorStop(0, 'rgba(255, 215, 0, 0.8)');
-        gradient.addColorStop(0.5, 'rgba(255, 215, 0, 0.4)');
-        gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+        gradient.addColorStop(0, 'rgba(74, 144, 226, 0.8)'); // Blue color
+        gradient.addColorStop(0.5, 'rgba(74, 144, 226, 0.4)');
+        gradient.addColorStop(1, 'rgba(74, 144, 226, 0)');
         
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, 64, 64);
@@ -186,8 +186,11 @@ class CollectibleManager {
                         ? platform.x + (platform.width / 2) - 1.5  // Increased leftward offset for moving platform
                         : platform.x + (platform.width / 2);
                     
-                    console.log('Spawning orb on platform', absolutePlatformNumber, 'at position:', x, platform.y + 0.5);
-                    this.spawnOrb(x, platform.y + 0.5, isOnMovingPlatform);
+                    // Place collectible higher above the platform (1.5 units above)
+                    const y = platform.y + 1.5;
+                    
+                    console.log('Spawning orb on platform', absolutePlatformNumber, 'at position:', x, y);
+                    this.spawnOrb(x, y, isOnMovingPlatform);
                 }
             });
             
@@ -299,6 +302,28 @@ class CollectibleManager {
                 }
             }
         });
+    }
+
+    reset() {
+        // Remove all existing collectibles
+        this.collectibles.forEach(collectible => {
+            if (!collectible.collected) {
+                this.sceneSetup.scene.remove(collectible.sprite);
+                this.sceneSetup.scene.remove(collectible.glowSprite);
+                collectible.particles.forEach(particle => {
+                    this.sceneSetup.scene.remove(particle);
+                });
+            }
+        });
+
+        // Clear all arrays and sets
+        this.collectibles = [];
+        this.movingPlatformOrbs.clear();
+        this.platformCount = 0;
+        this.lastPlatformCount = 0;
+
+        // Respawn orbs on platforms
+        this.spawnOrbsOnPlatforms();
     }
 }
 

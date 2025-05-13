@@ -169,11 +169,15 @@ class QuizManager {
         this.currentQuestion = 0;
         this.correctAnswers = 0;
         this.quizPanel.style.display = 'flex';
+        // Add trident quiz theme class
+        this.quizPanel.querySelector('.quiz-container').classList.add('trident-quiz');
         this.showQuestion();
     }
     
     hideQuiz() {
         this.quizPanel.style.display = 'none';
+        // Remove trident quiz theme class
+        this.quizPanel.querySelector('.quiz-container').classList.remove('trident-quiz');
     }
     
     completeQuiz() {
@@ -181,14 +185,14 @@ class QuizManager {
         this.earnedFireballs = this.correctAnswers * 2;
         
         // Show completion message
-        this.quizFeedback.textContent = `You earned ${this.earnedFireballs} fireballs!`;
-        this.quizFeedback.style.color = '#FFD700';
+        this.quizFeedback.textContent = `You earned ${this.earnedFireballs} tridents!`;
+        this.quizFeedback.style.color = '#FF6600'; // Updated to match trident theme color
         
         // Hide quiz panel after a shorter delay
         setTimeout(() => {
             this.hideQuiz();
             
-            // Add earned fireballs to ammo
+            // Add earned tridents to ammo
             if (window.game && window.game.uiManager) {
                 const currentAmmo = window.game.uiManager.fireballAmmo;
                 window.game.uiManager.updateFireballAmmo(currentAmmo + this.earnedFireballs);

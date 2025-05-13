@@ -92,28 +92,44 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 10px 20px;
+            padding: 15px 25px;
             background: rgba(0, 0, 0, 0.7);
             border-radius: 10px;
             pointer-events: none;
             z-index: 10;
-            border: 2px solid #FFDD00;
-            box-shadow: 0 0 15px rgba(255, 221, 0, 0.3);
+            border: 2px solid #4A90E2;
+            box-shadow: 0 0 15px rgba(74, 144, 226, 0.3);
         }
         
         #fireballIcons {
             display: flex;
-            gap: 10px;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .ammo-title {
+            color: #FFFFFF;
+            font-size: 16px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+        
+        .trident-icons-container {
+            display: flex;
+            gap: 12px;
             align-items: center;
         }
         
         .fireball-icon {
-            width: 32px;
-            height: 32px;
-            background-color: #FFDD00;
-            border-radius: 50%;
-            box-shadow: 0 0 10px #FFDD00;
+            width: 40px;
+            height: 40px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
             transition: opacity 0.3s ease;
+            filter: drop-shadow(0 0 5px rgba(74, 144, 226, 0.5));
         }
         
         .ammo-text {
@@ -193,6 +209,52 @@
             max-width: 600px;
             text-align: center;
             box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+
+        /* Shield Quiz Theme */
+        .quiz-container.shield-quiz {
+            background-color: rgba(0, 20, 40, 0.95);
+            border: 3px solid #00CCFF;
+            box-shadow: 0 0 30px rgba(0, 204, 255, 0.4);
+        }
+
+        .quiz-container.shield-quiz .quiz-title {
+            color: #00CCFF;
+            text-shadow: 0 0 15px rgba(0, 204, 255, 0.6);
+        }
+
+        .quiz-container.shield-quiz .answer-btn {
+            background-color: #0066CC;
+            border: 2px solid #00CCFF;
+            box-shadow: 0 0 10px rgba(0, 204, 255, 0.3);
+        }
+
+        .quiz-container.shield-quiz .answer-btn:hover {
+            background-color: #0088FF;
+            box-shadow: 0 0 20px rgba(0, 204, 255, 0.5);
+        }
+
+        /* Trident Quiz Theme */
+        .quiz-container.trident-quiz {
+            background-color: rgba(40, 20, 0, 0.95);
+            border: 3px solid #FF6600;
+            box-shadow: 0 0 30px rgba(255, 102, 0, 0.4);
+        }
+
+        .quiz-container.trident-quiz .quiz-title {
+            color: #FF6600;
+            text-shadow: 0 0 15px rgba(255, 102, 0, 0.6);
+        }
+
+        .quiz-container.trident-quiz .answer-btn {
+            background-color: #CC4400;
+            border: 2px solid #FF6600;
+            box-shadow: 0 0 10px rgba(255, 102, 0, 0.3);
+        }
+
+        .quiz-container.trident-quiz .answer-btn:hover {
+            background-color: #FF8800;
+            box-shadow: 0 0 20px rgba(255, 102, 0, 0.5);
         }
         
         .quiz-title {
@@ -516,43 +578,78 @@
             align-items: center;
             z-index: 9999;
             transition: opacity 0.5s ease;
+            overflow: hidden;
         }
 
-        #loadingScreen.fade-out {
-            opacity: 0;
+        #loadingScreen::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, 
+                rgba(0, 204, 255, 0.1) 0%,
+                rgba(0, 204, 255, 0.2) 25%,
+                rgba(0, 204, 255, 0.1) 50%,
+                rgba(0, 204, 255, 0.2) 75%,
+                rgba(0, 204, 255, 0.1) 100%);
+            animation: electricPulse 2s infinite;
+            z-index: -1;
+        }
+
+        @keyframes electricPulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.7; }
         }
 
         .loading-title {
-            color: #FFD700;
+            color: #00CCFF;
             font-size: 32px;
             margin-bottom: 30px;
             text-align: center;
-            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+            text-shadow: 0 0 10px #00CCFF,
+                         0 0 20px #00CCFF,
+                         0 0 30px #00CCFF;
+            animation: electricGlow 2s infinite;
+        }
+
+        @keyframes electricGlow {
+            0%, 100% { text-shadow: 0 0 10px #00CCFF,
+                                  0 0 20px #00CCFF,
+                                  0 0 30px #00CCFF; }
+            50% { text-shadow: 0 0 20px #00CCFF,
+                             0 0 40px #00CCFF,
+                             0 0 60px #00CCFF; }
         }
 
         .loading-progress-container {
             width: 80%;
             max-width: 400px;
             height: 20px;
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: rgba(0, 204, 255, 0.1);
             border-radius: 10px;
             overflow: hidden;
             margin-bottom: 20px;
+            border: 2px solid #00CCFF;
+            box-shadow: 0 0 15px rgba(0, 204, 255, 0.3);
         }
 
         .loading-progress-bar {
             height: 100%;
             width: 0%;
-            background: linear-gradient(90deg, #FFD700, #FFA500);
+            background: linear-gradient(90deg, #00CCFF, #0066FF);
             border-radius: 10px;
             transition: width 0.3s ease;
+            box-shadow: 0 0 20px rgba(0, 204, 255, 0.5);
         }
 
         .loading-message {
-            color: #FFFFFF;
+            color: #00CCFF;
             font-size: 16px;
             text-align: center;
             margin-top: 10px;
+            text-shadow: 0 0 5px #00CCFF;
         }
 
         @media (max-width: 768px) {
@@ -568,7 +665,7 @@
 </head>
 <body>
     <div id="loadingScreen">
-        <div class="loading-title">Ben and Mathkraft's<br>Tiger 🐯 vs The Dishwasher 🧽</div>
+        <div class="loading-title">Ben and Mathkraft's<br>Rage of the Trident 🔱</div>
         <div class="loading-progress-container">
             <div class="loading-progress-bar"></div>
         </div>
@@ -576,14 +673,18 @@
     </div>
 
     <div id="intro-screen">
-        <h1 class="intro-title">Ben and Mathkraft's<br>Tiger 🐯 vs The Dishwasher 🧽</h1>
+        <h1 class="intro-title">LEVEL 3<br>Rage of the Trident 🔱</h1>
         <div class="controls-list">
             <p>Press <strong>E</strong> to attack</p>
+            <p>Press <strong>SPACE</strong> to jump</p>
+            <p>Press <strong>SHIFT</strong> to summon a shield</p>
         </div>
         <div class="how-to-win">
             <h2>How to Win?</h2>
             <ul>
                 <li>Reduce dishwasher health to 0</li>
+                <li>Avoid toaster attacks by summoning a shield</li>
+                <li>Answer quizzes to get tridents and shields</li>
             </ul>
         </div>
         <button class="play-button" onclick="startGame()">Play</button>
@@ -607,7 +708,6 @@
     </div>
     
     <div id="fireballAmmoDisplay">
-        <div class="ammo-text">Fireballs:</div>
         <div id="fireballIcons"></div>
     </div>
     
@@ -681,8 +781,8 @@
                     window.game.collectibleManager.reset();
                 }
                 
-                // Resume the game
-                window.game.resumeGame();
+                // Start the game
+                window.game.startGame();
             } else {
                 // Initialize new game
                 if (typeof initGame === 'function') {
