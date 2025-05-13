@@ -41,6 +41,8 @@ class ToastShower {
 
         // Quiz state
         this.isQuizActive = false;
+        this.quizStartTime = 0;
+        this.timeWhenQuizStarted = 0;
     }
 
     initializeCountdownDisplay() {
@@ -165,16 +167,7 @@ class ToastShower {
     isAnyQuizActive() {
         const quizPanel = document.getElementById('quiz-panel-root');
         const isActive = quizPanel && quizPanel.style.display === 'flex';
-        
-        // If quiz state changed, update our stored state
-        if (isActive !== this.isQuizActive) {
-            this.isQuizActive = isActive;
-            if (!isActive) {
-                // Quiz just ended - reset the timer
-                this.timeUntilNextShower = this.showerInterval;
-                this.lastShowerTime = performance.now() / 1000;
-            }
-        }
+        this.isQuizActive = isActive;
         return isActive;
     }
 
@@ -209,7 +202,7 @@ class ToastShower {
         // Check quiz state first
         const isQuizActive = this.isAnyQuizActive();
 
-        // Update countdown timer only if no quiz is active
+        // Update countdown timer only if no quiz is active and no shower is active
         if (!this.isActive && !isQuizActive) {
             this.timeUntilNextShower = Math.max(0, this.showerInterval - (currentTime - this.lastShowerTime));
             this.updateCountdownDisplay();
@@ -220,7 +213,7 @@ class ToastShower {
                 this.lastShowerTime = currentTime;
             }
         } else if (isQuizActive) {
-            // While quiz is active, keep displaying the time that was remaining before quiz started
+            // While quiz is active, keep displaying the current time without updating lastShowerTime
             this.updateCountdownDisplay();
         }
 
