@@ -25,12 +25,10 @@ class ShieldQuizManager {
     }
     
     generateQuestions() {
-        // Generate 3 grade 4 level math questions
+        // Generate 1 grade 4 level math question
         this.questions = [];
-        for (let i = 0; i < 3; i++) {
-            const question = this.generateQuestion();
-            this.questions.push(question);
-        }
+        const question = this.generateQuestion();
+        this.questions.push(question);
     }
     
     generateQuestion() {
@@ -171,8 +169,8 @@ class ShieldQuizManager {
     }
     
     completeQuiz() {
-        // Calculate shield duration (3 seconds per correct answer)
-        this.shieldDuration = this.correctAnswers * 3;
+        // Set shield duration to 5 seconds
+        this.shieldDuration = 5;
         
         // Show completion message
         this.quizFeedback.textContent = `Shield activated for ${this.shieldDuration} seconds!`;

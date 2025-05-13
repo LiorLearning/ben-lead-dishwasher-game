@@ -9,6 +9,8 @@ class AudioManager {
         this.buttonSound = new Audio('assets/audio/button.mp3');
         this.explosionSound = new Audio('assets/audio/explosion.mp3');
         this.portalSound = new Audio('assets/audio/portal.mp3');
+        this.showerSound = new Audio('assets/audio/shower.mp3');
+        this.shieldSound = new Audio('assets/audio/shield.mp3');
 
         // Set BGM to loop
         this.bgm.loop = true;
@@ -22,6 +24,8 @@ class AudioManager {
         this.buttonSound.volume = 0.7;
         this.explosionSound.volume = 0.7;
         this.portalSound.volume = 0.7;
+        this.showerSound.volume = 0.7;
+        this.shieldSound.volume = 0.7;
         
         // Wait for audio to be loaded
         this.isLoaded = false;
@@ -45,7 +49,9 @@ class AudioManager {
             { name: 'wrong', sound: this.wrongSound },
             { name: 'button', sound: this.buttonSound },
             { name: 'explosion', sound: this.explosionSound },
-            { name: 'portal', sound: this.portalSound }
+            { name: 'portal', sound: this.portalSound },
+            { name: 'shower', sound: this.showerSound },
+            { name: 'shield', sound: this.shieldSound }
         ];
         
         // Load other sounds with explicit preloading
@@ -182,6 +188,30 @@ class AudioManager {
         this.portalSound.currentTime = 0;
         this.portalSound.play().catch(error => {
             console.error('Error playing portal sound:', error);
+        });
+    }
+
+    playShowerSound() {
+        if (!this.isLoaded) return;
+        this.showerSound.currentTime = 0;
+        this.showerSound.loop = true; // Enable looping
+        this.showerSound.play().catch(error => {
+            console.error('Error playing shower sound:', error);
+        });
+    }
+
+    stopShowerSound() {
+        if (!this.isLoaded) return;
+        this.showerSound.pause();
+        this.showerSound.currentTime = 0;
+        this.showerSound.loop = false; // Disable looping
+    }
+
+    playShieldSound() {
+        if (!this.isLoaded) return;
+        this.shieldSound.currentTime = 0;
+        this.shieldSound.play().catch(error => {
+            console.error('Error playing shield sound:', error);
         });
     }
 } 

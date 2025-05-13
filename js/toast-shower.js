@@ -38,6 +38,9 @@ class ToastShower {
         this.shieldTimeRemaining = 0;
         this.shieldElement = null;
         this.initializeShieldDisplay();
+
+        // Quiz state
+        this.isQuizActive = false;
     }
 
     initializeCountdownDisplay() {
@@ -104,6 +107,11 @@ class ToastShower {
         this.shieldTimeRemaining = duration;
         this.updateShieldDisplay();
         
+        // Play shield sound
+        if (window.game && window.game.audioManager) {
+            window.game.audioManager.playShieldSound();
+        }
+        
         // Change tiger sprite to shield version
         if (window.game && window.game.characterController && window.game.characterController.characters.player) {
             const tiger = window.game.characterController.characters.player;
@@ -125,6 +133,11 @@ class ToastShower {
         this.lastSpawnTime = this.showerStartTime;
         this.electricTrail.start();
         
+        // Play shower sound
+        if (window.game && window.game.audioManager) {
+            window.game.audioManager.playShowerSound();
+        }
+        
         // Create toaster if it doesn't exist
         if (!this.toaster) {
             this.toaster = this.assetsLoader.createSprite('toasterSprite', 'toaster', this.toasterSize, this.toasterSize);
@@ -137,6 +150,23 @@ class ToastShower {
                 return;
             }
         }
+    }
+
+    // Add new method to check if any quiz is active
+    isAnyQuizActive() {
+        const quizPanel = document.getElementById('quiz-panel-root');
+        const isActive = quizPanel && quizPanel.style.display === 'flex';
+        
+        // If quiz state changed, update our stored state
+        if (isActive !== this.isQuizActive) {
+            this.isQuizActive = isActive;
+            if (!isActive) {
+                // Quiz just ended - reset the timer
+                this.timeUntilNextShower = this.showerInterval;
+                this.lastShowerTime = performance.now() / 1000;
+            }
+        }
+        return isActive;
     }
 
     update(delta) {
@@ -167,8 +197,11 @@ class ToastShower {
             }
         }
 
-        // Update countdown timer
-        if (!this.isActive) {
+        // Check quiz state first
+        const isQuizActive = this.isAnyQuizActive();
+
+        // Update countdown timer only if no quiz is active
+        if (!this.isActive && !isQuizActive) {
             this.timeUntilNextShower = Math.max(0, this.showerInterval - (currentTime - this.lastShowerTime));
             this.updateCountdownDisplay();
 
@@ -177,6 +210,14 @@ class ToastShower {
                 this.startShower();
                 this.lastShowerTime = currentTime;
             }
+        } else if (isQuizActive) {
+            // While quiz is active, keep displaying the time that was remaining before quiz started
+            this.updateCountdownDisplay();
+        }
+
+        // If any quiz is active, pause the toaster
+        if (isQuizActive) {
+            return;
         }
 
         if (!this.isActive || !this.toaster) return;
@@ -364,6 +405,11 @@ class ToastShower {
         if (this.toaster) {
             this.scene.remove(this.toaster);
             this.toaster = null;
+        }
+        
+        // Stop shower sound
+        if (window.game && window.game.audioManager) {
+            window.game.audioManager.stopShowerSound();
         }
         
         this.isActive = false;
