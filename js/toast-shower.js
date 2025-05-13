@@ -27,7 +27,7 @@ class ToastShower {
         this.electricTrail = new ElectricTrail(scene);
 
         // Automatic shower properties
-        this.showerInterval = 20; // Increased to 20 seconds
+        this.showerInterval = 15; // Changed from 20 to 15 seconds
         this.timeUntilNextShower = this.showerInterval;
         this.lastShowerTime = 0;
         this.countdownElement = null;
@@ -103,6 +103,15 @@ class ToastShower {
     }
 
     activateShield(duration) {
+        // If shield is already active, first restore the original texture
+        if (this.isShieldActive && window.game && window.game.characterController && window.game.characterController.characters.player) {
+            const tiger = window.game.characterController.characters.player;
+            if (tiger.sprite.userData && tiger.sprite.userData.originalTexture) {
+                tiger.sprite.material.map = tiger.sprite.userData.originalTexture;
+                tiger.sprite.material.needsUpdate = true;
+            }
+        }
+
         this.isShieldActive = true;
         this.shieldTimeRemaining = duration;
         this.updateShieldDisplay();
